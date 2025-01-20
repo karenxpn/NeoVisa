@@ -1,0 +1,62 @@
+# Python-specific ignores
+*.py[cod]
+__pycache__/
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.pyc
+
+# Virtual environment
+venv/
+.env/
+.env.*  # For dotenv environment files
+.venv/
+.Python
+
+# Logs and debugging
+*.log
+*.sqlite3
+*.db
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Editor-specific ignores
+.vscode/
+*.code-workspace
+
+# Node.js (if frontend code or dependencies are present)
+node_modules/
+npm-debug.log*
+
+# Dependency directories
+.mypy_cache/
+.pytest_cache/
+.tox/
+.coverage
+
+# Coverage reports
+htmlcov/
+.coverage.*
+
+# Static files (if generated dynamically)
+staticfiles/
+mediafiles/
+
+# Docker-related files
+docker-compose.override.yml
+docker-compose*.yml
+*.dockerfile
+.dockerignore
+
+# Nginx and Gunicorn configuration files (optional, keep versions in separate directory)
+*.conf
+gunicorn_config.py
+
+# Byte-compiled files
+*.pyo
