@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt, ExpiredSignatureError
 from starlette import status
 
+from database import get_db
 from dotenv import load_dotenv
 
 load_dotenv()
