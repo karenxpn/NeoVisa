@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from jwt_token import create_access_token
+
 app = FastAPI()
 
 

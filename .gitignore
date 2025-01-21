@@ -12,6 +12,7 @@ build/
 venv/
 .env/
 .env.*  # For dotenv environment files
+.env
 .venv/
 .Python
 
