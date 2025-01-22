@@ -1,8 +1,6 @@
 import asyncio
 from logging.config import fileConfig
 from sqlite3 import Connection
-
-from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
@@ -10,6 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from database import Base, DATABASE_URL
 from user.models import User
+from auth.models import PhoneOtp, Token
 
 
 # this is the Alembic Config object, which provides

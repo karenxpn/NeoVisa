@@ -61,3 +61,5 @@ gunicorn_config.py
 
 # Byte-compiled files
 *.pyo
+
+db
