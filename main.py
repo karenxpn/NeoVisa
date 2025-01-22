@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-
+from auth.routes import router as auth_router
 app = FastAPI()
 
 
@@ -11,3 +11,6 @@ async def root():
 @app.get("/hello/{name}")
 async def say_hello(name: str):
     return {"message": f"Hello {name}"}
+
+app.include_router(auth_router, prefix="/auth")
+
