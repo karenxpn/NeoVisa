@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
-from database import get_db
+from core.database import get_db
 from dotenv import load_dotenv
 
 from user.models import User

@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 
-from database import Base
+from core.database import Base
 
 class PhoneOtp(Base):
     __tablename__ = "phone_otps"

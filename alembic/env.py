@@ -6,10 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from database import Base, DATABASE_URL
-from user.models import User
-from auth.models import PhoneOtp, Token
-
+from core.database import Base, DATABASE_URL
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

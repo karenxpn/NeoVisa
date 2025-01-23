@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.requests import PhoneNumberRequest, OTPRequest
 from auth.services import send_otp, verify_otp
-from database import get_db
+from core.database import get_db
 
 
 router = APIRouter()

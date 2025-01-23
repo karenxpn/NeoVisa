@@ -9,8 +9,8 @@ from twilio.base.exceptions import TwilioRestException
 
 from auth.models import PhoneOtp, Token
 from auth.requests import PhoneNumberRequest, OTPRequest
-from jwt_token import create_access_token
-from proceed_request import proceed_request
+from core.jwt_token import create_access_token
+from core.proceed_request import proceed_request
 from user.models import User
 from twilio.rest import Client
 
