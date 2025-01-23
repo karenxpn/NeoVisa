@@ -1,15 +1,19 @@
 import datetime
+import os
 import random
 
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from twilio.base.exceptions import TwilioRestException
 
 from auth.models import PhoneOtp, Token
 from auth.requests import PhoneNumberRequest, OTPRequest
 from jwt_token import create_access_token
 from proceed_request import proceed_request
 from user.models import User
+from twilio.rest import Client
+
 
 
 async def send_otp(data: PhoneNumberRequest, db: AsyncSession):
@@ -34,6 +38,8 @@ async def send_otp(data: PhoneNumberRequest, db: AsyncSession):
         else:
             otp = PhoneOtp(phone_number=data.phone_number, otp=gen_otp)
             db.add(otp)
+
+        send_otp_with_twilio(gen_otp, data.phone_number)
 
         await db.commit()
         return {
@@ -82,5 +88,24 @@ async def verify_otp(data: OTPRequest, db: AsyncSession):
         return {
             'token': access_token,
         }
+
+
+
+def send_otp_with_twilio(otp, phone_number):
+    account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+    auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+
+    try:
+        client = Client(account_sid, auth_token)
+        _ = client.messages.create(
+            messaging_service_sid=os.environ.get('TWILIO_MESSAGING_SERVICE_SID'),
+            to=phone_number,
+            body=f"Your OTP for NeoVies is {otp}!",
+        )
+
+    except TwilioRestException as e:
+        raise HTTPException(status_code=500, detail=f'Failed to send OTP: {str(e)}')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send OTP: {str(e)}")
 
 
