@@ -12,6 +12,7 @@ build/
 venv/
 .env/
 .env.*  # For dotenv environment files
+.env
 .venv/
 .Python
 
@@ -60,3 +61,5 @@ gunicorn_config.py
 
 # Byte-compiled files
 *.pyo
+
+db
