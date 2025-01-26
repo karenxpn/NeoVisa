@@ -19,7 +19,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.now(tz=timezone.utc))
     updated_at = Column(DateTime, default=datetime.now(tz=timezone.utc), onupdate=datetime.now(tz=timezone.utc))
 
-    passport = Relationship('Passport', back_populates='user', passive_deletes=True)
+    passports = Relationship('Passport', back_populates='user', passive_deletes=True)
 
 
 class PassportType(PyEnum):
