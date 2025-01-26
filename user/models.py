@@ -20,6 +20,7 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.now(tz=timezone.utc), onupdate=datetime.now(tz=timezone.utc))
 
     passports = Relationship('Passport', back_populates='user', passive_deletes=True)
+    email = Relationship('Email', back_populates='user', uselist=False, passive_deletes=True)
 
 
 class PassportType(PyEnum):
@@ -45,3 +46,16 @@ class Passport(Base):
 
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True, unique=True)
     user = Relationship('User', back_populates="passports")
+
+
+class Email(Base):
+    __tablename__ = "emails"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    is_verified = Column(Boolean, default=False)
+
+    created_at = Column(DateTime, default=datetime.now(tz=timezone.utc))
+    updated_at = Column(DateTime, default=datetime.now(tz=timezone.utc), onupdate=datetime.now(tz=timezone.utc))
+
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True, unique=True)
+    user = Relationship('User', back_populates='email')
