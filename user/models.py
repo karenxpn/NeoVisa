@@ -19,6 +19,10 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.now(tz=timezone.utc))
     updated_at = Column(DateTime, default=datetime.now(tz=timezone.utc), onupdate=datetime.now(tz=timezone.utc))
 
+    first_name = Column(String, index=True)
+    last_name = Column(String, index=True)
+    family_name = Column(String, index=True)
+
     passports = Relationship('Passport', back_populates='user', passive_deletes=True)
     email = Relationship('Email', back_populates='user', uselist=False, passive_deletes=True)
 
