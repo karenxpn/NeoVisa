@@ -21,12 +21,13 @@ class UserService:
 
             return user
 
-async def delete_user(user: User, db: AsyncSession):
-    async with proceed_request(db) as db:
-        await db.delete(user)
-        await db.commit()
+    @staticmethod
+    async def delete_user(user: User, db: AsyncSession):
+        async with proceed_request(db) as db:
+            await db.delete(user)
+            await db.commit()
 
-        return {
-            "status": "success",
-            "message": "User deleted",
-        }
+            return {
+                "status": "success",
+                "message": "User deleted",
+            }
