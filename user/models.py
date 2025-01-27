@@ -1,8 +1,12 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy.orm import Relationship
 
 from core.database import Base
+from enum import Enum as PyEnum
+from sqlalchemy import Enum
+
 
 
 class User(Base):
@@ -14,3 +18,22 @@ class User(Base):
     is_verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.now(tz=timezone.utc))
     updated_at = Column(DateTime, default=datetime.now(tz=timezone.utc), onupdate=datetime.now(tz=timezone.utc))
+
+    first_name = Column(String, index=True)
+    last_name = Column(String, index=True)
+    family_name = Column(String, index=True)
+
+    email = Relationship('Email', back_populates='user', uselist=False, passive_deletes=True)
+
+
+class Email(Base):
+    __tablename__ = "emails"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    is_verified = Column(Boolean, default=False)
+
+    created_at = Column(DateTime, default=datetime.now(tz=timezone.utc))
+    updated_at = Column(DateTime, default=datetime.now(tz=timezone.utc), onupdate=datetime.now(tz=timezone.utc))
+
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True, unique=True)
+    user = Relationship('User', back_populates='email')
