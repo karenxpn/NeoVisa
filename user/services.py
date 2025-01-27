@@ -6,15 +6,14 @@ from sqlalchemy.orm import selectinload
 
 from core.proceed_request import proceed_request
 from user.models import User, Email
-from user.requests import UpdateUserRequest
+from user.requests import UpdateUserRequest, update_user_whitelist
 
 
 class UserService:
     @staticmethod
     async def update_user(db: AsyncSession, user: User, update_model: UpdateUserRequest):
         async with proceed_request(db) as db:
-            valid_fields = {'first_name', 'last_name', 'family_name'}
-            updates = {field: value for field, value in update_model.model_dump(exclude_unset=True).items() if field in valid_fields}
+            updates = {field: value for field, value in update_model.model_dump(exclude_unset=True).items() if field in update_user_whitelist}
 
             for field, value in updates.items():
                 setattr(user, field, value)
