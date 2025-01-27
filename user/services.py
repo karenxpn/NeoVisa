@@ -1,7 +1,11 @@
+from datetime import datetime, timezone
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.proceed_request import proceed_request
-from user.models import User
+from user.models import User, Email
 from user.requests import UpdateUserRequest
 
 
@@ -15,11 +19,36 @@ class UserService:
             for field, value in updates.items():
                 setattr(user, field, value)
 
+            # Handle email separately since it's a relationship
+            if update_model.email is not None:
+                user = await db.execute(
+                    select(User).options(selectinload(User.email)).filter_by(id=user.id)
+                )
+                user = user.scalars().first()
+
+                if user.email:
+                    # Update existing email
+                    user.email.email = update_model.email
+                    user.email.updated_at = datetime.now(tz=timezone.utc)
+                    user.email.is_verified = False
+                    db.add(user.email)
+                else:
+                    # Create new email
+                    new_email = Email(
+                        email=str(update_model.email),
+                        user_id=user.id,
+                        is_verified=False
+                    )
+                    db.add(new_email)
+
             db.add(user)
             await db.commit()
             await db.refresh(user)
 
-            return user
+            return {
+                'success': True,
+                'message': 'User updated successfully.',
+            }
 
     @staticmethod
     async def delete_user(user: User, db: AsyncSession):
