@@ -28,7 +28,6 @@ class UserService:
                 if user.email:
                     # Update existing email
                     user.email.email = update_model.email
-                    user.email.updated_at = datetime.now(tz=timezone.utc)
                     user.email.is_verified = False
                     db.add(user.email)
                 else:
