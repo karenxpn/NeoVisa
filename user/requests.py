@@ -9,8 +9,8 @@ class UpdateUserRequest(BaseModel):
     passport_number: str = Field(None, min_length=6, max_length=20, pattern=r'^[A-Za-z0-9]+$')
     passport_type: str = Field(None, min_length=1)
     issuer_country: str = Field(None, min_length=1)
-    issue_date: date
-    expire_date: date
+    issue_date: Optional[date] = None
+    expire_date: Optional[date] = None
     issue_place: str = Field(None, min_length=1)
 
     # user info
