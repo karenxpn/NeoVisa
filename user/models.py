@@ -23,33 +23,7 @@ class User(Base):
     last_name = Column(String, index=True)
     family_name = Column(String, index=True)
 
-    passports = Relationship('Passport', back_populates='user', passive_deletes=True)
     email = Relationship('Email', back_populates='user', uselist=False, passive_deletes=True)
-
-
-class PassportType(PyEnum):
-    ORDINARY = "Ordinary"
-    DIPLOMATIC = "Diplomatic"
-    COLLECTIVE = "Collective"
-    SERVICE = "Service"
-    OFFICIAL = "Official"
-    FOREIGNERS = 'Passport of foreigners'
-    PROTECTION = "Protection passport"
-    UN = 'UN laissez-passer'
-
-
-class Passport(Base):
-    __tablename__ = "passports"
-    id = Column(Integer, primary_key=True, index=True)
-    passport_number = Column(String, unique=True, nullable=False, index=True)
-    passport_type = Column(Enum(PassportType), nullable=False, index=True)
-    issuer_country = Column(String, nullable=False, index=True)
-    issue_date = Column(DateTime, nullable=False)
-    expire_date = Column(DateTime, nullable=False)
-    issue_place = Column(String, nullable=False, index=True)
-
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True, unique=True)
-    user = Relationship('User', back_populates="passports")
 
 
 class Email(Base):
