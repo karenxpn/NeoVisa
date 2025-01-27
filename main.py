@@ -10,5 +10,5 @@ app.include_router(auth_router, prefix="/auth")
 
 
 from user.routes import router as user_router
-app.include_router(user_router, prefix="/users")
+app.include_router(user_router)
 
