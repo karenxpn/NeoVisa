@@ -10,6 +10,7 @@ from core.database import Base, DATABASE_URL
 
 from auth.models import *
 from user.models import *
+from visa_center.models import *
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
