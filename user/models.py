@@ -4,9 +4,6 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import Relationship
 
 from core.database import Base
-from enum import Enum as PyEnum
-from sqlalchemy import Enum
-
 
 
 class User(Base):
@@ -24,6 +21,7 @@ class User(Base):
     family_name = Column(String, index=True)
 
     email = Relationship('Email', back_populates='user', uselist=False, passive_deletes=True)
+    visa_credentials = Relationship('VisaCenterCredentials', back_populates='user', passive_deletes=True)
 
 
 class Email(Base):
