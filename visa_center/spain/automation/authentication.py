@@ -122,7 +122,7 @@ class BLSAuthentication:
             time.sleep(1)
             self.handle_verification()
         except Exception as e:
-            print(f"Login failed: {str(e)}")
+            raise HTTPException(500, f"Login failed: {str(e)}")
         finally:
             input("Press Enter to continue...")
 
