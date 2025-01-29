@@ -1,5 +1,7 @@
 import os
 import time
+
+from fastapi import HTTPException
 from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -32,12 +34,10 @@ class BLSAuthentication:
         print(f"Current value: {element.get_attribute('value')}")
 
     def make_elements_visible(self):
-        """Ensure input fields are visible and usable"""
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, "//input[contains(@id, 'UserId')]"))
             )
-            print("Login fields found.")
 
             # Make fields visible
             self.driver.execute_script("""
@@ -56,7 +56,7 @@ class BLSAuthentication:
             print("Fields made visible.")
 
         except Exception as e:
-            print(f"Error: {str(e)}")
+            raise HTTPException(500, str(e))
 
     def fill_credentials(self, username, password):
         try:
@@ -65,16 +65,14 @@ class BLSAuthentication:
             pass_fields = self.driver.find_elements(By.XPATH, "//input[contains(@id, 'Password')]")
 
             if not user_fields or not pass_fields:
-                print("Error: No username or password fields found.")
-                return
+                raise HTTPException(500, 'Error filling credentials.')
 
             # Select the first visible and enabled input field
             user_field = next((f for f in user_fields if f.is_displayed() and f.is_enabled()), None)
             pass_field = next((f for f in pass_fields if f.is_displayed() and f.is_enabled()), None)
 
             if not user_field or not pass_field:
-                print("Error: No usable input fields found.")
-                return
+                raise HTTPException(500, 'No usable input fields found.')
 
             # Fill credentials
             self.driver.execute_script("""
@@ -94,7 +92,7 @@ class BLSAuthentication:
             self.check_element_state(pass_field, "Active Password Field")
 
         except Exception as e:
-            print(f"Error filling credentials: {str(e)}")
+            raise HTTPException(500, f"Error filling credentials: {str(e)}")
 
     def handle_verification(self):
         try:
@@ -111,17 +109,16 @@ class BLSAuthentication:
                 submit_button.click()
                 print("Clicked submit button")
             except:
-                print("Submit button not found or not needed")
+                raise HTTPException(500, 'Submit button not found or not needed')
 
         except Exception as e:
-            print(f"Error during verification: {str(e)}")
-
+            raise HTTPException(500, f"Error during verification: {str(e)}")
 
     def login(self):
         try:
             self.make_elements_visible()
             time.sleep(1)
-            self.fill_credentials("username", "password")
+            self.fill_credentials("", "")
             time.sleep(1)
             self.handle_verification()
         except Exception as e:
