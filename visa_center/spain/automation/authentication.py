@@ -56,7 +56,7 @@ class BLSAuthentication:
             print("Fields made visible.")
 
         except Exception as e:
-            raise HTTPException(500, str(e))
+            raise Exception(str(e))
 
     def fill_credentials(self, username, password):
         try:
@@ -65,14 +65,14 @@ class BLSAuthentication:
             pass_fields = self.driver.find_elements(By.XPATH, "//input[contains(@id, 'Password')]")
 
             if not user_fields or not pass_fields:
-                raise HTTPException(500, 'Error filling credentials.')
+                raise Exception('Error filling credentials.')
 
             # Select the first visible and enabled input field
             user_field = next((f for f in user_fields if f.is_displayed() and f.is_enabled()), None)
             pass_field = next((f for f in pass_fields if f.is_displayed() and f.is_enabled()), None)
 
             if not user_field or not pass_field:
-                raise HTTPException(500, 'No usable input fields found.')
+                raise Exception('No usable input fields found.')
 
             # Fill credentials
             self.driver.execute_script("""
@@ -92,7 +92,7 @@ class BLSAuthentication:
             self.check_element_state(pass_field, "Active Password Field")
 
         except Exception as e:
-            raise HTTPException(500, f"Error filling credentials: {str(e)}")
+            raise Exception(str(e))
 
     def handle_verification(self):
         try:
@@ -109,10 +109,10 @@ class BLSAuthentication:
                 submit_button.click()
                 print("Clicked submit button")
             except:
-                raise HTTPException(500, 'Submit button not found or not needed')
+                raise Exception('Submit button not found or not needed')
 
         except Exception as e:
-            raise HTTPException(500, f"Error during verification: {str(e)}")
+            raise Exception(f"Error during verification: {str(e)}")
 
     def login(self):
         try:
@@ -123,8 +123,6 @@ class BLSAuthentication:
             self.handle_verification()
         except Exception as e:
             raise HTTPException(500, f"Login failed: {str(e)}")
-        finally:
-            input("Press Enter to continue...")
 
 
 service = BLSAuthentication()
