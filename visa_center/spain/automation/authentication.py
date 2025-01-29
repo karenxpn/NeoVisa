@@ -68,15 +68,6 @@ class BLSAuthentication:
                 print("Error: No username or password fields found.")
                 return
 
-            # Debugging: Print all found fields
-            for idx, field in enumerate(user_fields):
-                print(
-                    f"Username Field {idx}: ID={field.get_attribute('id')} Displayed={field.is_displayed()} Enabled={field.is_enabled()}")
-
-            for idx, field in enumerate(pass_fields):
-                print(
-                    f"Password Field {idx}: ID={field.get_attribute('id')} Displayed={field.is_displayed()} Enabled={field.is_enabled()}")
-
             # Select the first visible and enabled input field
             user_field = next((f for f in user_fields if f.is_displayed() and f.is_enabled()), None)
             pass_field = next((f for f in pass_fields if f.is_displayed() and f.is_enabled()), None)
@@ -114,7 +105,7 @@ class BLSAuthentication:
             print("Clicked verify button")
 
             try:
-                submit_button = WebDriverWait(self.driver, 5).until(
+                submit_button = WebDriverWait(self.driver, 20).until(
                     EC.element_to_be_clickable((By.ID, "btnSubmit"))
                 )
                 submit_button.click()
