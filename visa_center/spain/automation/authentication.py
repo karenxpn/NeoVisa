@@ -1,6 +1,5 @@
 import os
 import time
-
 from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -9,27 +8,22 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 
-
 url = os.environ.get('BLS_URL')
+
 class BLSAuthentication:
     def __init__(self):
-        """Initializes WebDriver and loads the login page."""
         chrome_options = Options()
         chrome_options.add_experimental_option("detach", True)
         chrome_options.add_argument("--disable-web-security")
         chrome_options.add_argument("--disable-features=IsolateOrigins,site-per-process")
 
-        # Setup Chrome WebDriver
         service = Service(ChromeDriverManager().install())
         self.driver = webdriver.Chrome(service=service, options=chrome_options)
-        self.driver.maximize_window()
-
-        # Navigate to the login page
         self.driver.get(url)
         time.sleep(2)
 
-    def check_element_state(self, element, element_name):
-        """Debug function to check element state (visibility, enabled, etc.)."""
+    @staticmethod
+    def check_element_state(element, element_name):
         print(f"\nChecking {element_name}:")
         print(f"Is displayed: {element.is_displayed()}")
         print(f"Is enabled: {element.is_enabled()}")
@@ -38,118 +32,112 @@ class BLSAuthentication:
         print(f"Current value: {element.get_attribute('value')}")
 
     def make_elements_visible(self):
-        """Makes the correct username and password fields visible using JavaScript."""
-
-        self.driver.execute_script("""
-            // Show the correct username and password fields
-            document.getElementById('UserId3').style.display = 'block';
-            document.getElementById('Password2').style.display = 'block';
-
-            // Hide other fields
-            Array.from(document.querySelectorAll('input[id^="UserId"')).forEach(el => {
-                if(el.id !== 'UserId3') el.style.display = 'none';
-            });
-            Array.from(document.querySelectorAll('input[id^="Password"')).forEach(el => {
-                if(el.id !== 'Password2') el.style.display = 'none';
-            });
-
-            // Ensure parent elements are visible
-            document.getElementById('UserId3').parentElement.style.display = 'block';
-            document.getElementById('Password2').parentElement.style.display = 'block';
-        """)
-
-        print("Made elements visible...")
-
-    def fill_credentials(self, username, password):
-        """Fills in the username and password using JavaScript."""
+        """Ensure input fields are visible and usable"""
         try:
-            # Wait until the username and password fields are visible
             WebDriverWait(self.driver, 10).until(
-                lambda driver: driver.execute_script('return document.getElementById("UserId3").style.display') == 'block'
+                EC.presence_of_element_located((By.XPATH, "//input[contains(@id, 'UserId')]"))
             )
-            WebDriverWait(self.driver, 10).until(
-                lambda driver: driver.execute_script('return document.getElementById("Password2").style.display') == 'block'
-            )
+            print("Login fields found.")
 
-            # Locate the fields
-            username_field = self.driver.find_element(By.ID, "UserId3")
-            password_field = self.driver.find_element(By.ID, "Password2")
+            # Make fields visible
+            self.driver.execute_script("""
+                let userField = document.querySelector('input[id^="UserId"]');
+                let passField = document.querySelector('input[id^="Password"]');
 
-            # Focus on the elements and set the values
-            self.driver.execute_script("arguments[0].focus();", username_field)
-            self.driver.execute_script("arguments[0].focus();", password_field)
-
-            # Fill the credentials
-            self.driver.execute_script("arguments[0].value = arguments[1];", username_field, username)
-            self.driver.execute_script("arguments[0].value = arguments[1];", password_field, password)
-
-            # Check the element state after filling in the credentials
-            self.check_element_state(username_field, "Username field")
-            self.check_element_state(password_field, "Password field")
-
-            print("Filled in credentials...")
+                if (userField && passField) {
+                    userField.style.display = 'block';
+                    passField.style.display = 'block';
+                    userField.removeAttribute('readonly');
+                    passField.removeAttribute('readonly');
+                    userField.removeAttribute('disabled');
+                    passField.removeAttribute('disabled');
+                }
+            """)
+            print("Fields made visible.")
 
         except Exception as e:
-            print(f"Error occurred while filling credentials: {str(e)}")
+            print(f"Error: {str(e)}")
 
-    def click_verify_button(self):
-        """Waits for and clicks the verify button."""
+    def fill_credentials(self, username, password):
+        try:
+            # Find all username and password fields
+            user_fields = self.driver.find_elements(By.XPATH, "//input[contains(@id, 'UserId')]")
+            pass_fields = self.driver.find_elements(By.XPATH, "//input[contains(@id, 'Password')]")
+
+            if not user_fields or not pass_fields:
+                print("Error: No username or password fields found.")
+                return
+
+            # Debugging: Print all found fields
+            for idx, field in enumerate(user_fields):
+                print(
+                    f"Username Field {idx}: ID={field.get_attribute('id')} Displayed={field.is_displayed()} Enabled={field.is_enabled()}")
+
+            for idx, field in enumerate(pass_fields):
+                print(
+                    f"Password Field {idx}: ID={field.get_attribute('id')} Displayed={field.is_displayed()} Enabled={field.is_enabled()}")
+
+            # Select the first visible and enabled input field
+            user_field = next((f for f in user_fields if f.is_displayed() and f.is_enabled()), None)
+            pass_field = next((f for f in pass_fields if f.is_displayed() and f.is_enabled()), None)
+
+            if not user_field or not pass_field:
+                print("Error: No usable input fields found.")
+                return
+
+            # Fill credentials
+            self.driver.execute_script("""
+                function simulateUserInput(element, value) {
+                    element.focus();
+                    element.value = value;
+                    element.dispatchEvent(new Event('input', { bubbles: true }));
+                    element.dispatchEvent(new Event('change', { bubbles: true }));
+                    element.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+                }
+
+                simulateUserInput(arguments[0], arguments[2]);
+                simulateUserInput(arguments[1], arguments[3]);
+            """, user_field, pass_field, username, password)
+
+            self.check_element_state(user_field, "Active Username Field")
+            self.check_element_state(pass_field, "Active Password Field")
+
+        except Exception as e:
+            print(f"Error filling credentials: {str(e)}")
+
+    def handle_verification(self):
         try:
             verify_button = WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.ID, "btnVerify"))
             )
             verify_button.click()
-            print("Clicked verify button...")
+            print("Clicked verify button")
+
+            try:
+                submit_button = WebDriverWait(self.driver, 5).until(
+                    EC.element_to_be_clickable((By.ID, "btnSubmit"))
+                )
+                submit_button.click()
+                print("Clicked submit button")
+            except:
+                print("Submit button not found or not needed")
 
         except Exception as e:
-            print(f"Error occurred while clicking verify button: {str(e)}")
-
-    def click_login_button(self):
-        """Waits for and clicks the login button."""
-        try:
-            login_button = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.ID, "btnSubmit"))
-            )
-
-            self.check_element_state(login_button, "Login button")
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", login_button)
-            self.driver.execute_script("arguments[0].disabled = false;", login_button)
-
-            login_button.click()
-            print("Clicked login button...")
-
-            WebDriverWait(self.driver, 20).until_not(
-                EC.presence_of_element_located((By.CLASS_NAME, "overlay-spinner"))
-            )
-            print("Overlay disappeared or page loaded.")
-
-            self.driver.execute_script("arguments[0].click();", login_button)
-
-            # Wait for a successful login indication or redirection
-            WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.ID, "someElementAfterLogin"))  # Replace with an element that appears after login
-            )
-            print("Page redirected successfully after login.")
-
-        except Exception as e:
-            print(f"Error occurred while clicking login button: {str(e)}")
+            print(f"Error during verification: {str(e)}")
 
 
     def login(self):
-        username = ""
-        password = ""
-
         try:
             self.make_elements_visible()
-            self.fill_credentials(username, password)
-            self.click_verify_button()
-
-            time.sleep(40)
-            self.click_login_button()
+            time.sleep(1)
+            self.fill_credentials("username", "password")
+            time.sleep(1)
+            self.handle_verification()
         except Exception as e:
-            print(f"Login process failed: {str(e)}")
+            print(f"Login failed: {str(e)}")
+        finally:
+            input("Press Enter to continue...")
 
 
 service = BLSAuthentication()
 service.login()
-
