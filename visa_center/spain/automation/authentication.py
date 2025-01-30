@@ -1,7 +1,11 @@
 import os
+import re
 import time
+from io import BytesIO
 
+from PIL import Image
 from fastapi import HTTPException
+from pytesseract import pytesseract
 from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -18,6 +22,8 @@ class BLSAuthentication:
         chrome_options.add_experimental_option("detach", True)
         chrome_options.add_argument("--disable-web-security")
         chrome_options.add_argument("--disable-features=IsolateOrigins,site-per-process")
+
+        pytesseract.tesseract_cmd = '/usr/local/bin/tesseract'
 
         service = Service(ChromeDriverManager().install())
         self.driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -94,6 +100,18 @@ class BLSAuthentication:
         except Exception as e:
             raise Exception(str(e))
 
+    def get_captcha_instructions(self):
+        time.sleep(7)
+        captcha_element = self.driver.find_element(By.ID, 'popup_1')
+        captcha_image = captcha_element.screenshot_as_png
+
+        image = Image.open(BytesIO(captcha_image))
+        captcha_text = pytesseract.image_to_string(image)
+
+        match = re.search(r'\d+', captcha_text)
+
+        return match.group() if match else None
+
     def handle_verification(self):
         try:
             verify_button = WebDriverWait(self.driver, 10).until(
@@ -101,6 +119,8 @@ class BLSAuthentication:
             )
             verify_button.click()
             print("Clicked verify button")
+
+            print('Captcha instructions = ', self.get_captcha_instructions())
 
             try:
                 submit_button = WebDriverWait(self.driver, 20).until(
@@ -123,6 +143,8 @@ class BLSAuthentication:
             self.handle_verification()
         except Exception as e:
             raise HTTPException(500, f"Login failed: {str(e)}")
+        finally:
+            input("Press Enter to continue...")
 
 
 service = BLSAuthentication()
