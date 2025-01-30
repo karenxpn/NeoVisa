@@ -1,5 +1,8 @@
+import asyncio
 import os
 import time
+
+from anyio import sleep
 from fastapi import HTTPException
 from pytesseract import pytesseract
 from selenium.webdriver.chrome.service import Service
@@ -98,7 +101,7 @@ class BLSAuthentication:
         except Exception as e:
             raise Exception(str(e))
 
-    def handle_verification(self):
+    async def handle_verification(self):
         try:
             verify_button = WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.ID, "btnVerify"))
@@ -107,12 +110,14 @@ class BLSAuthentication:
             print("Clicked verify button")
 
             solver = CaptchaSolver(self.driver)
-            instructions = solver.get_captcha_instructions()
+            instructions = await solver.get_captcha_instructions()
             print('Captcha instructions = ', instructions)
-            solver.solve_captcha(instructions)
+            await solver.solve_captcha(instructions)
+
+            await asyncio.sleep(2)
 
             try:
-                submit_button = WebDriverWait(self.driver, 20).until(
+                submit_button = WebDriverWait(self.driver, 120).until(
                     EC.element_to_be_clickable((By.ID, "btnSubmit"))
                 )
                 submit_button.click()
@@ -123,18 +128,17 @@ class BLSAuthentication:
         except Exception as e:
             raise Exception(f"Error during verification: {str(e)}")
 
-    def login(self):
+    async def login(self):
         try:
             self.make_elements_visible()
-            time.sleep(1)
-            self.fill_credentials("", "")
-            time.sleep(1)
-            self.handle_verification()
+            await asyncio.sleep(1)
+            self.fill_credentials("asdf", "asdfasf1234!A")
+            await asyncio.sleep(1)
+            await self.handle_verification()
         except Exception as e:
             raise HTTPException(500, f"Login failed: {str(e)}")
-        finally:
-            input("Press Enter to continue...")
 
 
 service = BLSAuthentication()
-service.login()
+asyncio.run(service.login())
+
