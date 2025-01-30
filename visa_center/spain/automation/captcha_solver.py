@@ -50,8 +50,8 @@ class CaptchaSolver:
                 print("No visible CAPTCHA images found.")
                 return
 
-            for div in captcha_divs:
-                await self.captcha_image_interaction(div, instructions)
+            tasks = [self.captcha_image_interaction(div, instructions) for div in captcha_divs]
+            await asyncio.gather(*tasks)
 
             # Submit CAPTCHA
             elements = self.driver.find_elements(By.XPATH, "//div[@class='col-4 text-center img-action-div']")
