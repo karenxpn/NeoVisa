@@ -1,9 +1,5 @@
 import os
-import re
 import time
-from io import BytesIO
-
-from PIL import Image
 from fastapi import HTTPException
 from pytesseract import pytesseract
 from selenium.webdriver.chrome.service import Service
@@ -13,6 +9,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
+
+from visa_center.spain.automation.captcha_solver import CaptchaSolver
 
 url = os.environ.get('BLS_URL')
 
@@ -100,18 +98,6 @@ class BLSAuthentication:
         except Exception as e:
             raise Exception(str(e))
 
-    def get_captcha_instructions(self):
-        time.sleep(7)
-        captcha_element = self.driver.find_element(By.ID, 'popup_1')
-        captcha_image = captcha_element.screenshot_as_png
-
-        image = Image.open(BytesIO(captcha_image))
-        captcha_text = pytesseract.image_to_string(image)
-
-        match = re.search(r'\d+', captcha_text)
-
-        return match.group() if match else None
-
     def handle_verification(self):
         try:
             verify_button = WebDriverWait(self.driver, 10).until(
@@ -120,7 +106,10 @@ class BLSAuthentication:
             verify_button.click()
             print("Clicked verify button")
 
-            print('Captcha instructions = ', self.get_captcha_instructions())
+            solver = CaptchaSolver(self.driver)
+            instructions = solver.get_captcha_instructions()
+            print('Captcha instructions = ', instructions)
+            solver.solve_captcha(instructions)
 
             try:
                 submit_button = WebDriverWait(self.driver, 20).until(
