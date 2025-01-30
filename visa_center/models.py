@@ -16,13 +16,13 @@ SECRET_KEY = os.environ.get('FERNET_SECRET_KEY')
 cipher = Fernet(SECRET_KEY)
 
 class CountryEnum(str, Enum):
-    SPAIN = "ES"
+    ES = "Spain"
 
 class VisaCenterCredentials(Base):
     __tablename__ = 'visa_center_credentials'
 
     id = Column(Integer, primary_key=True, index=True)
-    country = Column(SQLEnum(CountryEnum), nullable=False, default=CountryEnum.SPAIN)
+    country = Column(SQLEnum(CountryEnum), nullable=False, default=CountryEnum.ES)
 
     username = Column(String, nullable=False)
     encrypted_password = Column(String, nullable=False)
