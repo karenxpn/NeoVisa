@@ -5,16 +5,25 @@ from dotenv import load_dotenv
 from sqlalchemy import Column, String, Integer, ForeignKey
 from sqlalchemy.orm import Relationship
 from core.database import Base
+from sqlalchemy import Enum as SQLEnum
+from enum import Enum
+
+
 
 load_dotenv()
 
 SECRET_KEY = os.environ.get('FERNET_SECRET_KEY')
 cipher = Fernet(SECRET_KEY)
 
+class CountryEnum(str, Enum):
+    ES = "Spain"
+
 class VisaCenterCredentials(Base):
     __tablename__ = 'visa_center_credentials'
 
     id = Column(Integer, primary_key=True, index=True)
+    country = Column(SQLEnum(CountryEnum), nullable=False, default=CountryEnum.ES)
+
     username = Column(String, nullable=False)
     encrypted_password = Column(String, nullable=False)
 
