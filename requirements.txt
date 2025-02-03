@@ -40,3 +40,9 @@ urllib3==2.3.0
 uvicorn==0.34.0
 yarl==1.18.3
 cryptography~=44.0.0
+selenium~=4.28.1
+webdriver-manager~=4.0.2
+pillow~=11.1.0
+pytesseract~=0.3.13
+opencv-python~=4.11.0.86
+numpy~=2.2.2

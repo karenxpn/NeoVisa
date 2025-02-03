@@ -4,6 +4,7 @@ from core.proceed_request import proceed_request
 from user.models import User
 from visa_center.models import VisaCenterCredentials
 from visa_center.requests import AddVisaAccountRequest
+from visa_center.spain.automation.authentication import BLSAuthentication
 
 
 class VisaCenterService:
@@ -23,3 +24,8 @@ class VisaCenterService:
                 'success': True,
                 "message": "Visa account added successfully"
             }
+
+    @staticmethod
+    async def run_visa_authentication(credentials: VisaCenterCredentials):
+        service = BLSAuthentication(credentials.username, credentials.get_password())
+        await service.login()
