@@ -1,8 +1,6 @@
 import asyncio
 import os
 import time
-
-from anyio import sleep
 from fastapi import HTTPException
 from pytesseract import pytesseract
 from selenium.webdriver.chrome.service import Service
@@ -12,13 +10,12 @@ from selenium.webdriver.support.wait import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
-
 from visa_center.spain.automation.captcha_solver import CaptchaSolver
 
 url = os.environ.get('BLS_URL')
 
 class BLSAuthentication:
-    def __init__(self):
+    def __init__(self, username, password):
         chrome_options = Options()
         chrome_options.add_experimental_option("detach", True)
         chrome_options.add_argument("--disable-web-security")
@@ -27,6 +24,8 @@ class BLSAuthentication:
         pytesseract.tesseract_cmd = '/usr/local/bin/tesseract'
 
         service = Service(ChromeDriverManager().install())
+        self.username = username
+        self.password = password
         self.driver = webdriver.Chrome(service=service, options=chrome_options)
         self.driver.get(url)
         time.sleep(2)
@@ -65,7 +64,7 @@ class BLSAuthentication:
         except Exception as e:
             raise Exception(str(e))
 
-    def fill_credentials(self, username, password):
+    def fill_credentials(self):
         try:
             # Find all username and password fields
             user_fields = self.driver.find_elements(By.XPATH, "//input[contains(@id, 'UserId')]")
@@ -93,7 +92,7 @@ class BLSAuthentication:
 
                 simulateUserInput(arguments[0], arguments[2]);
                 simulateUserInput(arguments[1], arguments[3]);
-            """, user_field, pass_field, username, password)
+            """, user_field, pass_field, self.username, self.password)
 
             self.check_element_state(user_field, "Active Username Field")
             self.check_element_state(pass_field, "Active Password Field")
@@ -117,7 +116,7 @@ class BLSAuthentication:
             await asyncio.sleep(2)
 
             try:
-                submit_button = WebDriverWait(self.driver, 120).until(
+                submit_button = WebDriverWait(self.driver, 180).until(
                     EC.element_to_be_clickable((By.ID, "btnSubmit"))
                 )
                 submit_button.click()
@@ -132,13 +131,13 @@ class BLSAuthentication:
         try:
             self.make_elements_visible()
             await asyncio.sleep(1)
-            self.fill_credentials("asdf", "asdfasf1234!A")
+            self.fill_credentials()
             await asyncio.sleep(1)
             await self.handle_verification()
         except Exception as e:
             raise HTTPException(500, f"Login failed: {str(e)}")
 
 
-service = BLSAuthentication()
+service = BLSAuthentication('username', 'password')
 asyncio.run(service.login())
 
