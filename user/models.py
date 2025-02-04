@@ -22,6 +22,7 @@ class User(Base):
 
     email = Relationship('Email', back_populates='user', uselist=False, passive_deletes=True)
     visa_credentials = Relationship('VisaCenterCredentials', back_populates='user', passive_deletes=True)
+    orders = Relationship('Order', back_populates='user', passive_deletes=True)
 
 
 class Email(Base):

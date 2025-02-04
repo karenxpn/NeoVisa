@@ -30,6 +30,7 @@ class VisaCenterCredentials(Base):
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     user = Relationship('User', back_populates='visa_credentials')
 
+    orders = Relationship("Order", back_populates="visa_credentials")
 
     def set_password(self, password: str):
         self.encrypted_password = cipher.encrypt(password.encode()).decode()
