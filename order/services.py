@@ -37,3 +37,13 @@ class OrderService:
                 return order
 
             raise HTTPException(status_code=404, detail="Order not found")
+
+
+    @staticmethod
+    async def get_orders(db: AsyncSession, user: User):
+        async with proceed_request(db) as db:
+            orders = await db.execute(
+                select(Order).where(Order.user_id == user.id)
+            )
+
+            return orders.scalars().all()

@@ -23,3 +23,8 @@ async def get_order(order_id: int,
                     db: AsyncSession = Depends(get_db)):
 
     return await OrderService.get_order(order_id, db, user)
+
+@router.get("/orders")
+async def get_orders(user: User = Depends(get_current_user),
+                     db: AsyncSession = Depends(get_db)):
+    return await OrderService.get_orders(db, user)
