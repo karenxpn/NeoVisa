@@ -28,16 +28,18 @@ class OrderService:
     async def get_order(order_id: int, db: AsyncSession, user: User):
         async with proceed_request(db) as db:
             order = await db.execute(
-                select(Order).where(Order.id == order_id, Order.user_id == user.id)
+                select(Order).where(Order.id == order_id)
             )
 
             order = order.scalars().first()
 
-            if order:
-                return order
+            if not order:
+                raise HTTPException(status_code=404, detail="Order not found")
 
-            raise HTTPException(status_code=404, detail="Order not found")
+            if order.user_id != user.id:
+                raise HTTPException(status_code=403, detail="You do not have permission to access this order")
 
+            return order
 
     @staticmethod
     async def get_orders(db: AsyncSession, user: User):
