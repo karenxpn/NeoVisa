@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.proceed_request import proceed_request
 from order.models import Order
-from order.requests import CreateOrderRequest
+from order.requests import CreateOrderRequest, UpdateOrderRequest
 from user.models import User
 
 
@@ -49,3 +49,23 @@ class OrderService:
             )
 
             return orders.scalars().all()
+
+
+    @staticmethod
+    async def update_order(order_id: int, db: AsyncSession, user: User, model: UpdateOrderRequest):
+        async with proceed_request(db) as db:
+            result = await db.execute(select(Order).where(Order.id == order_id))
+            order = result.scalars().first()
+
+            if not order:
+                raise HTTPException(status_code=404, detail="Order not found")
+
+            if order.user_id != user.id:
+                raise HTTPException(status_code=403, detail="You do not have permission to update this order")
+
+            order.status = model.status
+            await db.commit()
+            await db.refresh(order)
+            return order
+
+
