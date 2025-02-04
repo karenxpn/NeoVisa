@@ -21,7 +21,7 @@ class Order(Base):
     status = Column(SQLEnum(OrderStatus), default=OrderStatus.PENDING, nullable=False, index=True)
 
     credential_id = Column(Integer, ForeignKey("visa_center_credentials.id", ondelete="CASCADE"), nullable=False)
-    credential = Relationship('VisaCenterCredentials', back_populates="orders")
+    visa_credentials = Relationship('VisaCenterCredentials', back_populates="orders")
 
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     user = Relationship('User', back_populates='orders')

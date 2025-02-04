@@ -138,6 +138,6 @@ class BLSAuthentication:
             raise HTTPException(500, f"Login failed: {str(e)}")
 
 
-service = BLSAuthentication('username', 'password')
-asyncio.run(service.login())
+# service = BLSAuthentication('username', 'password')
+# asyncio.run(service.login())
 
