@@ -7,6 +7,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
+from stem import Signal
+from stem.control import Controller
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
@@ -16,10 +18,14 @@ url = os.environ.get('BLS_URL')
 
 class BLSAuthentication:
     def __init__(self, username, password):
+        self.change_ip()
+
         chrome_options = Options()
         chrome_options.add_experimental_option("detach", True)
         chrome_options.add_argument("--disable-web-security")
         chrome_options.add_argument("--disable-features=IsolateOrigins,site-per-process")
+        chrome_options.add_argument("--proxy-server=socks5://127.0.0.1:9050")
+
 
         pytesseract.tesseract_cmd = '/usr/local/bin/tesseract'
 
@@ -29,6 +35,14 @@ class BLSAuthentication:
         self.driver = webdriver.Chrome(service=service, options=chrome_options)
         self.driver.get(url)
         time.sleep(2)
+
+    @staticmethod
+    def change_ip():
+        with Controller.from_port(port=9051) as controller:
+            controller.authenticate()  # No password required if CookieAuthentication=1
+            controller.signal(Signal.NEWNYM)
+            time.sleep(3)
+            print("IP changed successfully")
 
     @staticmethod
     def check_element_state(element, element_name):
@@ -138,6 +152,6 @@ class BLSAuthentication:
             raise HTTPException(500, f"Login failed: {str(e)}")
 
 
-# service = BLSAuthentication('username', 'password')
-# asyncio.run(service.login())
+service = BLSAuthentication('username', 'password')
+asyncio.run(service.login())
 
