@@ -8,11 +8,11 @@ producer = Producer(producer_conf)
 
 
 def send_task(task_id):
-    producer.produce('task-queue', key=str(task_id), value=str(task_id))  # Send only the number
+    producer.produce('task-queue', key=str(task_id), value=str(task_id))
     producer.flush()
     print(f'Task {task_id} added to queue')
 
-
-
-for i in range(10):
-    send_task(i)
+def retry_task(task_id):
+    producer.produce('task-queue', key=str(task_id), value=str(task_id))
+    producer.flush()
+    print(f"❌ Task {task_id} failed, re-enqueued for retrying")

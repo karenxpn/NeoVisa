@@ -1,10 +1,12 @@
 from confluent_kafka import Consumer, KafkaException
 
+from core.kafka_producer import retry_task, send_task
+
 consumer_conf = {
     'bootstrap.servers': 'localhost:29092',
     'group.id': 'task-processor-group',
     'auto.offset.reset': 'earliest',
-    'enable.auto.commit': False
+    'enable.auto.commit': False,
 }
 consumer = Consumer(consumer_conf)
 consumer.subscribe(['task-queue'])
@@ -15,7 +17,13 @@ def process_task(task_id):
     return success
 
 
+for i in range(10):
+    send_task(i)
+
+
 while True:
+    print("Polling for messages...")  # Log polling
+
     try:
         msg = consumer.poll(1.0)
 
@@ -30,7 +38,9 @@ while True:
             consumer.commit()
             print(f"✅ Task {task_id} succeeded, removed from queue")
         else:
-            print(f"❌ Task {task_id} failed, will be retried")
+            retry_task(task_id)
+    except KafkaException as e:
+        print(f'Kafka error: {e}')
     except Exception as e:
         print(f"Error while consuming: {e}")
 
