@@ -22,7 +22,7 @@ for i in range(10):
 
 
 while True:
-    print("Polling for messages...")  # Log polling
+    print("Polling for messages...")
 
     try:
         msg = consumer.poll(1.0)

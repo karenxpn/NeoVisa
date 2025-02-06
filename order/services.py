@@ -6,12 +6,23 @@ from core.proceed_request import proceed_request
 from order.models import Order
 from order.requests import CreateOrderRequest, UpdateOrderRequest
 from user.models import User
+from visa_center.models import VisaCenterCredentials
 
 
 class OrderService:
     @staticmethod
     async def create_order(db: AsyncSession, user: User, model: CreateOrderRequest):
         async with proceed_request(db) as db:
+
+            visa_credentials = await db.execute(
+                select(VisaCenterCredentials)
+                .where(VisaCenterCredentials.id == model.credential_id)
+            )
+            visa_credentials = visa_credentials.scalar_one_or_none()
+
+            if visa_credentials is None:
+                raise HTTPException(status_code=404, detail="Visa Center Credentials not found")
+
             order = Order(
                 credential_id=model.credential_id,
                 user_id=user.id,
