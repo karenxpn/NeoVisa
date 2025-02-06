@@ -23,6 +23,9 @@ class OrderService:
             if visa_credentials is None:
                 raise HTTPException(status_code=404, detail="Visa Center Credentials not found")
 
+            if visa_credentials.user_id != user.id:
+                raise HTTPException(status_code=403, detail="User ID mismatch")
+
             order = Order(
                 credential_id=model.credential_id,
                 user_id=user.id,
