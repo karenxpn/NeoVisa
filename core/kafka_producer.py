@@ -1,3 +1,6 @@
+import json
+from typing import Any
+
 from confluent_kafka import Producer
 
 producer_conf = {
@@ -7,12 +10,24 @@ producer_conf = {
 producer = Producer(producer_conf)
 
 
-def send_task(task_id):
-    producer.produce('task-queue', key=str(task_id), value=str(task_id))
-    producer.flush()
-    print(f'Task {task_id} added to queue')
+def send_task(key, value, topic = 'visa-orders', callback=lambda err, msg: delivery_report(err, msg)):
+    if isinstance(value, dict):
+        value = json.dumps(value)
 
-def retry_task(task_id):
-    producer.produce('task-queue', key=str(task_id), value=str(task_id))
+    producer.produce(topic, key=key, value=value.encode('utf-8'), callback=callback)
     producer.flush()
-    print(f"❌ Task {task_id} failed, re-enqueued for retrying")
+    print(f'Task {key} added to queue')
+
+def retry_task(key, value, topic = 'visa-orders', callback=lambda err, msg: delivery_report(err, msg)):
+    if isinstance(value, dict):
+        value = json.dumps(value)
+
+    producer.produce(topic, key=key, value=value.encode('utf-8'), callback=callback)
+    producer.flush()
+    print(f"❌ Task {key} failed, re-enqueued for retrying")
+
+def delivery_report(err: Any, msg: Any):
+    if err is not None:
+        print(f"Message delivery failed: {err}")
+    else:
+        print(f"Message delivered to {msg.topic()} [{msg.partition()}]")

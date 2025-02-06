@@ -1,3 +1,5 @@
+import json
+
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +9,7 @@ from order.models import Order
 from order.requests import CreateOrderRequest, UpdateOrderRequest
 from user.models import User
 from visa_center.models import VisaCenterCredentials
+from core.kafka_producer import send_task
 
 
 class OrderService:
@@ -33,6 +36,25 @@ class OrderService:
 
             db.add(order)
             await db.commit()
+
+
+            print('Orderid: ', order.id)
+
+            order_data = {
+                'order_id': order.id,
+                'status': order.status,
+                'user_id': user.id,
+                'visa_credentials': {
+                    'id': visa_credentials.id,
+                    'username': visa_credentials.username,
+                    'password': visa_credentials.get_password()
+                },
+            }
+
+            send_task(str(order.id), order_data)
+
+            print(order_data)
+
             return {
                 'success': True,
                 'message': 'Order created',
