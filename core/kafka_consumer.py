@@ -15,7 +15,7 @@ consumer_conf = {
     'enable.auto.commit': False,
 }
 consumer = Consumer(consumer_conf)
-consumer.subscribe(['visa-orders'])
+consumer.subscribe(['visa-es-orders'])
 
 
 async def process_task(order):

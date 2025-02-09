@@ -10,7 +10,7 @@ producer_conf = {
 producer = Producer(producer_conf)
 
 
-def send_task(key, value, topic = 'visa-orders', callback=lambda err, msg: delivery_report(err, msg)):
+def send_task(key, value, topic = 'visa-es-orders', callback=lambda err, msg: delivery_report(err, msg)):
     if isinstance(value, dict):
         value = json.dumps(value)
 
@@ -18,7 +18,7 @@ def send_task(key, value, topic = 'visa-orders', callback=lambda err, msg: deliv
     producer.flush()
     print(f'Task {key} added to queue')
 
-def retry_task(key, value, topic = 'visa-orders', callback=lambda err, msg: delivery_report(err, msg)):
+def retry_task(key, value, topic = 'visa-es-orders', callback=lambda err, msg: delivery_report(err, msg)):
     if isinstance(value, dict):
         value = json.dumps(value)
 
