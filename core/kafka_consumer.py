@@ -1,7 +1,7 @@
 import json
+import time
 
 from confluent_kafka import Consumer, KafkaException
-
 from core.kafka_producer import retry_task, send_task
 
 consumer_conf = {
@@ -13,6 +13,7 @@ consumer_conf = {
 consumer = Consumer(consumer_conf)
 consumer.subscribe(['visa-orders'])
 
+
 def process_task(order_data):
     print(f"Processing Order {order_data['order_id']}...")
     success = int(order_data['order_id']) % 2 == 0  # Simulate success/failure
@@ -23,7 +24,7 @@ while True:
     print("Polling for messages...")
 
     try:
-        msg = consumer.poll(1.0)
+        msg = consumer.poll(5.0)
 
         if msg is None:
             continue
@@ -34,11 +35,14 @@ while True:
         order_data = json.loads(msg.value().decode('utf-8'))
         order_id = order_data['order_id']
 
+        time.sleep(5)
+
         if process_task(order_data):
-            consumer.commit()
             print(f"✅ Task {order_id} succeeded, removed from queue")
         else:
             retry_task(str(order_id), json.dumps(order_data))
+        consumer.commit()
+
     except KafkaException as e:
         print(f'Kafka error: {e}')
     except Exception as e:
