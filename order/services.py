@@ -1,11 +1,13 @@
 import json
 
 from fastapi import HTTPException
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.proceed_request import proceed_request
 from order.models import Order
+from order.order_serializer import OrderSerializer
 from order.requests import CreateOrderRequest, UpdateOrderRequest
 from user.models import User
 from visa_center.models import VisaCenterCredentials
@@ -39,21 +41,9 @@ class OrderService:
 
 
             print('Orderid: ', order.id)
-
-            order_data = {
-                'order_id': order.id,
-                'status': order.status,
-                'user_id': user.id,
-                'visa_credentials': {
-                    'id': visa_credentials.id,
-                    'username': visa_credentials.username,
-                    'password': visa_credentials.get_password()
-                },
-            }
-
-            send_task(str(order.id), order_data)
-
-            print(order_data)
+            order_data = OrderSerializer.model_validate(order)
+            order_data = jsonable_encoder(order_data)
+            send_task(str(order.id), json.dumps(order_data))
 
             return {
                 'success': True,
@@ -103,5 +93,4 @@ class OrderService:
             await db.commit()
             await db.refresh(order)
             return order
-
 
