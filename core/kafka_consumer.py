@@ -3,9 +3,13 @@ import json
 import time
 
 from confluent_kafka import Consumer, KafkaException
+from sqlalchemy import select
+
+from core.database import get_db
 from core.kafka_producer import retry_task, send_task
+from core.proceed_request import proceed_request
 from order.order_serializer import OrderSerializer
-from visa_center.models import CountryEnum
+from visa_center.models import CountryEnum, VisaCenterCredentials
 from visa_center.services import VisaCenterService
 
 consumer_conf = {
@@ -17,30 +21,31 @@ consumer_conf = {
 consumer = Consumer(consumer_conf)
 consumer.subscribe(['visa-es-orders'])
 
+async def get_visa_credentials(id: int):
+    async for db in get_db():
+        result = await db.execute(
+            select(VisaCenterCredentials)
+            .where(VisaCenterCredentials.id == id)
+        )
+        return result.scalar_one_or_none()
+
+
 
 async def process_task(order):
     print('Processing order: {}'.format(order))
 
-    visa_center = order.visa_credentials
+    visa_center = await get_visa_credentials(order.visa_credentials.id)
+
     if visa_center.country == CountryEnum.ES:
-        print('Valid visa center')
+        try:
+            await VisaCenterService().run_visa_authentication(visa_center)
+        except KafkaException as e:
+            print(e)
+        except Exception as e:
+            print(e)
     else:
         print('Invalid Visa Center')
-    # order = OrderSerializer.model_validate(order_data, partial=True)
-    # print(f"Processing Order {order}...")
-    #
-    # visa_center = order_data['visa_credentials']['visa_country']
-    # print(f"Visa Center: {visa_center}")
-    #
-    # if visa_center == CountryEnum.ES:
-    #     username = order_data['visa_credentials']['username']
-    #     password = order_data['visa_credentials']['password']
-    #
-    #     await VisaCenterService().run_visa_authentication(username, password)
-    # else:
-    #     print('Invalid Visa Center')
-    #
-    # success = int(order_data['order_id']) % 2 == 0  # Simulate success/failure
+
     return True
 
 
