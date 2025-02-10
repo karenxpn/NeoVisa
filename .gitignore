@@ -49,11 +49,6 @@ htmlcov/
 staticfiles/
 mediafiles/
 
-# Docker-related files
-docker-compose.override.yml
-docker-compose*.yml
-*.dockerfile
-.dockerignore
 
 # Nginx and Gunicorn configuration files (optional, keep versions in separate directory)
 *.conf
