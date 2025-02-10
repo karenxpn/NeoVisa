@@ -1,13 +1,11 @@
 import asyncio
 import json
-import time
 
 from confluent_kafka import Consumer, KafkaException
 from sqlalchemy import select
 
 from core.database import get_db
 from core.kafka_producer import retry_task, send_task
-from core.proceed_request import proceed_request
 from order.order_serializer import OrderSerializer
 from visa_center.models import CountryEnum, VisaCenterCredentials
 from visa_center.services import VisaCenterService
