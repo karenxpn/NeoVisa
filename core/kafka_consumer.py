@@ -5,7 +5,7 @@ from confluent_kafka import Consumer, KafkaException
 from sqlalchemy import select
 
 from core.database import get_db
-from core.kafka_producer import retry_task, send_task
+from core.kafka_producer import retry_task
 from order.order_serializer import OrderSerializer
 from visa_center.models import CountryEnum, VisaCenterCredentials
 from visa_center.services import VisaCenterService
@@ -19,11 +19,11 @@ consumer_conf = {
 consumer = Consumer(consumer_conf)
 consumer.subscribe(['visa-es-orders'])
 
-async def get_visa_credentials(id: int):
+async def get_visa_credentials(credentials_id: int):
     async for db in get_db():
         result = await db.execute(
             select(VisaCenterCredentials)
-            .where(VisaCenterCredentials.id == id)
+            .where(VisaCenterCredentials.id == credentials_id)
         )
         return result.scalar_one_or_none()
 
