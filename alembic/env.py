@@ -10,7 +10,8 @@ from core.database import Base, DATABASE_URL
 
 from auth.models import *
 from user.models import *
-from visa_center.models import *
+import visa_center.models.visa_center_model
+import visa_center.models.passport_model
 from order.models import *
 
 # this is the Alembic Config object, which provides

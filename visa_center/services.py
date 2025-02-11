@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.proceed_request import proceed_request
 from user.models import User
-from visa_center.models import VisaCenterCredentials
+from visa_center.models.visa_center_model import VisaCenterCredentials
 from visa_center.requests import AddVisaAccountRequest
 from visa_center.spain.automation.authentication import BLSAuthentication
 

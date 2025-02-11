@@ -17,6 +17,7 @@ cipher = Fernet(SECRET_KEY)
 
 class CountryEnum(str, Enum):
     ES = "Spain"
+    GR = "Greece"
 
 class VisaCenterCredentials(Base):
     __tablename__ = 'visa_center_credentials'
@@ -37,5 +38,3 @@ class VisaCenterCredentials(Base):
 
     def get_password(self) -> str:
         return cipher.decrypt(self.encrypted_password.encode()).decode()
-
-
