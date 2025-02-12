@@ -1,12 +1,8 @@
 from datetime import date
+from typing import Optional, List
+
 from pydantic import BaseModel, Field
 from visa_center.models.visa_center_model import CountryEnum
-
-
-class AddVisaAccountRequest(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
-    password: str = Field(..., min_length=8)
-    country: CountryEnum = Field(...)
 
 
 class AddVisaAccountPassport(BaseModel):
@@ -15,9 +11,16 @@ class AddVisaAccountPassport(BaseModel):
     issuer_country: str = Field(min_length=1)
     issue_date: date
     expire_date: date
-    issue_place: str = Field(None, min_length=1)
+    issue_place: Optional[str] = Field(None, min_length=1)
 
     name: str = Field(min_length=1)
     surname: str = Field(min_length=1)
     nationality: str = Field(min_length=1)
 
+
+class AddVisaAccountRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=8)
+    country: CountryEnum = Field(...)
+
+    passports: Optional[List[AddVisaAccountPassport]] = None
