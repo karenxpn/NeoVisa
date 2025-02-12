@@ -1,8 +1,7 @@
 from datetime import date
 from typing import Optional, List
-
 from pydantic import BaseModel, Field
-from visa_center.models.visa_center_model import CountryEnum
+from visa_center.models import CountryEnum
 
 
 class AddVisaAccountPassport(BaseModel):

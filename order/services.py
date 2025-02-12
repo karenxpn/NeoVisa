@@ -10,7 +10,7 @@ from order.models import Order
 from order.order_serializer import OrderSerializer
 from order.requests import CreateOrderRequest, UpdateOrderRequest
 from user.models import User
-from visa_center.models.visa_center_model import VisaCenterCredentials
+from visa_center.models import VisaCenterCredentials
 from core.kafka_producer import send_task
 
 

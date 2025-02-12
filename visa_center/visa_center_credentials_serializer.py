@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
-from visa_center.models.visa_center_model import CountryEnum
+from visa_center.models import CountryEnum
 
 
 class VisaCenterCredentialsSerializer(BaseModel):
