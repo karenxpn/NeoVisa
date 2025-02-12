@@ -1,5 +1,4 @@
 import os
-
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 from sqlalchemy import Column, String, Integer, ForeignKey
@@ -7,7 +6,6 @@ from sqlalchemy.orm import Relationship
 from core.database import Base
 from sqlalchemy import Enum as SQLEnum
 from enum import Enum
-
 
 
 load_dotenv()
@@ -32,6 +30,7 @@ class VisaCenterCredentials(Base):
     user = Relationship('User', back_populates='visa_credentials')
 
     orders = Relationship("Order", back_populates="visa_credentials")
+    passports = Relationship("Passport", back_populates="visa_credentials", passive_deletes=True)
 
     def set_password(self, password: str):
         self.encrypted_password = cipher.encrypt(password.encode()).decode()
