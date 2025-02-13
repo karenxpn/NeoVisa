@@ -46,3 +46,14 @@ class UpdateVisaAccountRequest(BaseModel):
         from_attributes = True
 
 
+
+class UpdatePassportRequest(BaseModel):
+    passport_type: Optional[PassportType] = None
+    issuer_country: Optional[str] = Field(None, min_length=1)
+    issue_date: Optional[date] = None
+    expire_date: Optional[date] = None
+    issue_place: Optional[str] = Field(None, min_length=1)
+
+    name: Optional[str] = Field(None, min_length=1)
+    surname: Optional[str] = Field(None, min_length=1)
+    nationality: Optional[str] = Field(None, min_length=1)
