@@ -67,6 +67,9 @@ class Passport(Base):
     surname = Column(String, nullable=False)
     nationality = Column(String, nullable=False)
 
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    user = relationship('User', back_populates='passports')
+
     credentials_id = Column(Integer, ForeignKey('visa_center_credentials.id', ondelete='CASCADE'), nullable=False, index=True)
     credentials = relationship('VisaCenterCredentials', back_populates='passports')
 
