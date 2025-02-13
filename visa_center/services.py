@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.proceed_request import proceed_request
 from user.models import User
@@ -41,11 +42,11 @@ class VisaCenterService:
             }
 
     @staticmethod
-    async def delete_visa_center_credentials(db: AsyncSession, user: User, account_id: int):
+    async def delete_visa_center_credentials(db: AsyncSession, user: User, cred_id: int):
         async with proceed_request(db) as db:
             result = await db.execute(
                 select(VisaCenterCredentials)
-                .where(VisaCenterCredentials.id == account_id)
+                .where(VisaCenterCredentials.id == cred_id)
             )
 
             visa_account = result.scalar_one_or_none()
@@ -53,10 +54,33 @@ class VisaCenterService:
             if not visa_account:
                 raise HTTPException(status_code=404, detail="Visa account not found")
 
+            if visa_account.user_id != user.id:
+                raise HTTPException(status_code=403, detail="You are not authorized to perform this action")
+
             await db.delete(visa_account)
             await db.commit()
 
             return {"success": True, "message": "Visa account deleted successfully"}
+
+
+    @staticmethod
+    async def get_visa_center_credentials(db: AsyncSession, user: User, cred_id: int):
+        async with proceed_request(db) as db:
+            result = await db.execute(
+                select(VisaCenterCredentials)
+                .options(selectinload(VisaCenterCredentials.passports))
+                .where(VisaCenterCredentials.id == cred_id)
+            )
+
+            visa_account = result.scalar_one_or_none()
+
+            if not visa_account:
+                raise HTTPException(status_code=404, detail="Visa account not found")
+
+            if visa_account.user_id != user.id:
+                raise HTTPException(status_code=403, detail="You are not authorized to perform this action")
+
+            return visa_account
 
 
     @staticmethod
