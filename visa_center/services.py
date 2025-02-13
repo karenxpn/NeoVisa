@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from core.proceed_request import proceed_request
 from user.models import User
 from visa_center.models import VisaCenterCredentials, Passport
-from visa_center.requests import AddVisaAccountRequest
+from visa_center.requests import AddVisaAccountRequest, VisaAccountCredentialsResponse
 from visa_center.spain.automation.authentication import BLSAuthentication
 
 
@@ -80,7 +80,7 @@ class VisaCenterService:
             if visa_account.user_id != user.id:
                 raise HTTPException(status_code=403, detail="You are not authorized to perform this action")
 
-            return visa_account
+            return VisaAccountCredentialsResponse.model_validate(visa_account)
 
 
     @staticmethod

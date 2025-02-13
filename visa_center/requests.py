@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from visa_center.models import CountryEnum
 
 
-class AddVisaAccountPassport(BaseModel):
+class VisaAccountPassport(BaseModel):
     passport_number: str = Field(min_length=6, max_length=20, pattern=r'^[A-Za-z0-9]+$')
     passport_type: str = Field(min_length=1)
     issuer_country: str = Field(min_length=1)
@@ -22,4 +22,16 @@ class AddVisaAccountRequest(BaseModel):
     password: str = Field(..., min_length=8)
     country: CountryEnum = Field(...)
 
-    passports: Optional[List[AddVisaAccountPassport]] = None
+    passports: Optional[List[VisaAccountPassport]] = None
+
+
+class VisaAccountCredentialsResponse(BaseModel):
+    id: int
+    country: str
+    username: str
+    user_id: int
+    passports: Optional[List[VisaAccountPassport]] = None
+
+    class Config:
+        from_attributes = True
+
