@@ -1,6 +1,8 @@
 from datetime import date
 from typing import Optional, List
 from pydantic import BaseModel, Field
+from pydantic.v1.fields import Undefined
+
 from visa_center.models import CountryEnum
 
 
@@ -30,8 +32,17 @@ class VisaAccountCredentialsResponse(BaseModel):
     country: str
     username: str
     user_id: int
-    passports: Optional[List[VisaAccountPassport]] = None
+    passports: Optional[List[VisaAccountPassport]] = Field(default=Undefined)
 
     class Config:
         from_attributes = True
+
+
+class UpdateVisaAccountRequest(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    country: Optional[CountryEnum] = None
+
+    class Config:
+        from_attributes = True
+
 
