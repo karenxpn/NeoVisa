@@ -15,3 +15,9 @@ async def add_visa_account(data: AddVisaAccountRequest,
                            db: AsyncSession = Depends(get_db)):
     return await VisaCenterService.store_visa_center_credentials(db, current_user, data)
 
+@router.delete('/visa-center/{id}')
+async def delete_visa_center_credentials(id: int,
+                                     current_user: User = Depends(get_current_user),
+                                     db: AsyncSession = Depends(get_db)):
+    return await VisaCenterService.delete_visa_center_credentials(db, current_user, id)
+
