@@ -1,9 +1,10 @@
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, aliased
 
 from core.proceed_request import proceed_request
+from order.models import Order, OrderStatus
 from user.models import User
 from visa_center.models import VisaCenterCredentials, Passport
 from visa_center.requests import AddVisaAccountRequest, VisaAccountCredentialsResponse, UpdateVisaAccountRequest, \
@@ -130,6 +131,22 @@ class VisaCenterService:
 
             if passport.user_id != user.id:
                 raise HTTPException(status_code=403, detail="You are not authorized to perform this action")
+
+            # check if there is an order with the passport that is PROCESSING
+            visa_credentials_alias = aliased(VisaCenterCredentials)
+
+            order = await db.execute(
+                select(Order)
+                .join(visa_credentials_alias, visa_credentials_alias.id == Order.credential_id)
+                .join(Passport, Passport.credentials_id == visa_credentials_alias.id)
+                .where(Passport.id == passport_id)
+                .where(Order.status == OrderStatus.PROCESSING)
+            )
+
+            order = order.scalar_one_or_none()
+
+            if order:
+                raise HTTPException(403, 'Order is being processed with this passport, you are not authorized to perform this action')
 
             update_dict = details.model_dump(exclude_unset=True)
             for key, value in update_dict.items():
