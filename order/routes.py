@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql.functions import current_user
 
 from core.database import get_db
 from core.jwt_token import get_current_user
-from order.requests import CreateOrderRequest, UpdateOrderRequest
+from order.requests import CreateOrderRequest
 from order.services import OrderService
 from user.models import User
 
