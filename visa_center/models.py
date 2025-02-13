@@ -30,7 +30,7 @@ class VisaCenterCredentials(Base):
     user = relationship('User', back_populates='visa_credentials')
 
     orders = relationship("Order", back_populates="visa_credentials")
-    passports = relationship("Passport", back_populates="credentials", passive_deletes=True)
+    passports = relationship("Passport", back_populates="credentials", cascade='all, delete-orphan')
 
     def set_password(self, password: str):
         self.encrypted_password = cipher.encrypt(password.encode()).decode()
@@ -56,7 +56,7 @@ class Passport(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    passport_number = Column(String, unique=True, nullable=False, index=True)
+    passport_number = Column(String, nullable=False, index=True)
     passport_type = Column(SQLEnum(PassportType), nullable=False, index=True, default=PassportType.FOREIGNERS)
     issuer_country = Column(String, nullable=False, index=True)
     issue_date = Column(DateTime, nullable=False)

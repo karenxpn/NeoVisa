@@ -3,12 +3,12 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 from pydantic.v1.fields import Undefined
 
-from visa_center.models import CountryEnum
+from visa_center.models import CountryEnum, PassportType
 
 
 class VisaAccountPassport(BaseModel):
     passport_number: str = Field(min_length=6, max_length=20, pattern=r'^[A-Za-z0-9]+$')
-    passport_type: str = Field(min_length=1)
+    passport_type: PassportType = Field(...)
     issuer_country: str = Field(min_length=1)
     issue_date: date
     expire_date: date
