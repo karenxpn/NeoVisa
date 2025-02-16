@@ -5,8 +5,9 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.database import async_session, get_db
 from core.proceed_request import proceed_request
-from order.models import Order
+from order.models import Order, OrderStatus
 from order.order_serializer import OrderSerializer
 from order.requests import CreateOrderRequest, UpdateOrderRequest
 from user.models import User
@@ -76,6 +77,29 @@ class OrderService:
 
             return orders.scalars().all()
 
+    @staticmethod
+    async def update_order_status(order_id: int, status: OrderStatus):
+        async for db in get_db():
+            result = await db.execute(
+                select(Order)
+                .where(Order.id == order_id)
+            )
+            order = result.scalar_one_or_none()
+
+            if not result:
+                raise Exception('Order not found')
+
+            order.status = status
+            await db.commit()
+
+    @staticmethod
+    async def get_visa_credentials(credentials_id: int):
+        async for db in get_db():
+            result = await db.execute(
+                select(VisaCenterCredentials)
+                .where(VisaCenterCredentials.id == credentials_id)
+            )
+            return result.scalar_one_or_none()
 
     @staticmethod
     async def update_order(order_id: int, db: AsyncSession, user: User, model: UpdateOrderRequest):

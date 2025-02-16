@@ -2,12 +2,11 @@ import asyncio
 import json
 
 from confluent_kafka import Consumer, KafkaException
-from sqlalchemy import select
-
-from core.database import get_db
 from core.kafka_producer import retry_task
+from order.models import OrderStatus
 from order.order_serializer import OrderSerializer
-from visa_center.models import CountryEnum, VisaCenterCredentials
+from order.services import OrderService
+from visa_center.models import CountryEnum
 from visa_center.services import VisaCenterService
 
 consumer_conf = {
@@ -19,20 +18,11 @@ consumer_conf = {
 consumer = Consumer(consumer_conf)
 consumer.subscribe(['visa-es-orders'])
 
-async def get_visa_credentials(credentials_id: int):
-    async for db in get_db():
-        result = await db.execute(
-            select(VisaCenterCredentials)
-            .where(VisaCenterCredentials.id == credentials_id)
-        )
-        return result.scalar_one_or_none()
-
-
 
 async def process_task(order):
     print('Processing order: {}'.format(order))
 
-    visa_center = await get_visa_credentials(order.visa_credentials.id)
+    visa_center = await OrderService.get_visa_credentials(order.visa_credentials.id)
 
     if visa_center.country == CountryEnum.ES:
         try:
@@ -71,6 +61,7 @@ async def consume_tasks():
             result = await process_task(order)
             if result:
                 print(f"✅ Task {order_id} succeeded, removed from queue")
+                await OrderService.update_order_status(order_id, OrderStatus.COMPLETED)
             else:
                 retry_task(str(order_id), json.dumps(order))
             consumer.commit()
