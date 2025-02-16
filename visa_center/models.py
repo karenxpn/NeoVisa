@@ -1,13 +1,11 @@
 import os
-
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
-from sqlalchemy import Column, String, Integer, ForeignKey
-from sqlalchemy.orm import Relationship
+from sqlalchemy import Column, String, Integer, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
 from core.database import Base
 from sqlalchemy import Enum as SQLEnum
 from enum import Enum
-
 
 
 load_dotenv()
@@ -17,6 +15,7 @@ cipher = Fernet(SECRET_KEY)
 
 class CountryEnum(str, Enum):
     ES = "Spain"
+    GR = "Greece"
 
 class VisaCenterCredentials(Base):
     __tablename__ = 'visa_center_credentials'
@@ -28,8 +27,10 @@ class VisaCenterCredentials(Base):
     encrypted_password = Column(String, nullable=False)
 
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
-    user = Relationship('User', back_populates='visa_credentials')
+    user = relationship('User', back_populates='visa_credentials')
 
+    orders = relationship("Order", back_populates="visa_credentials")
+    passports = relationship("Passport", back_populates="credentials", cascade='all, delete-orphan')
 
     def set_password(self, password: str):
         self.encrypted_password = cipher.encrypt(password.encode()).decode()
@@ -37,4 +38,38 @@ class VisaCenterCredentials(Base):
     def get_password(self) -> str:
         return cipher.decrypt(self.encrypted_password.encode()).decode()
 
+
+
+class PassportType(Enum):
+    ORDINARY = "Ordinary"
+    DIPLOMATIC = "Diplomatic"
+    COLLECTIVE = "Collective"
+    SERVICE = "Service"
+    OFFICIAL = "Official"
+    FOREIGNERS = 'Passport of foreigners'
+    PROTECTION = "Protection passport"
+    UN = 'UN laissez-passer'
+
+
+class Passport(Base):
+    __tablename__ = "passports"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    passport_number = Column(String, nullable=False, index=True)
+    passport_type = Column(SQLEnum(PassportType), nullable=False, index=True, default=PassportType.FOREIGNERS)
+    issuer_country = Column(String, nullable=False, index=True)
+    issue_date = Column(DateTime, nullable=False)
+    expire_date = Column(DateTime, nullable=False)
+    issue_place = Column(String, nullable=False, index=True)
+
+    name = Column(String, nullable=False)
+    surname = Column(String, nullable=False)
+    nationality = Column(String, nullable=False)
+
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    user = relationship('User', back_populates='passports')
+
+    credentials_id = Column(Integer, ForeignKey('visa_center_credentials.id', ondelete='CASCADE'), nullable=False, index=True)
+    credentials = relationship('VisaCenterCredentials', back_populates='passports')
 

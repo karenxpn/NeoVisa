@@ -22,6 +22,8 @@ class User(Base):
 
     email = Relationship('Email', back_populates='user', uselist=False, passive_deletes=True)
     visa_credentials = Relationship('VisaCenterCredentials', back_populates='user', passive_deletes=True)
+    orders = Relationship('Order', back_populates='user', passive_deletes=True)
+    passports = Relationship('Passport', back_populates='user', cascade='all, delete-orphan')
 
 
 class Email(Base):

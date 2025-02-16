@@ -31,7 +31,10 @@ class CaptchaSolver:
 
         match = re.search(r'\d+', captcha_text)
 
-        return match.group() if match else None
+        if match:
+            return match.group()
+
+        raise Exception('No captcha instructions found')
 
     async def solve_captcha(self, instructions):
         try:
