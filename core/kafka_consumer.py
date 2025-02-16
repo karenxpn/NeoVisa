@@ -63,7 +63,7 @@ async def consume_tasks():
                 print(f"✅ Task {order_id} succeeded, removed from queue")
                 await OrderService.update_order_status(order_id, OrderStatus.COMPLETED)
             else:
-                retry_task(str(order_id), json.dumps(order))
+                await retry_task(str(order_id), json.dumps(order))
             consumer.commit()
 
         except KafkaException as e:

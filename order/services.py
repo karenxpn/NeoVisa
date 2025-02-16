@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import async_session, get_db
+from core.database import get_db
 from core.proceed_request import proceed_request
 from order.models import Order, OrderStatus
 from order.order_serializer import OrderSerializer
@@ -44,7 +44,7 @@ class OrderService:
             print('Orderid: ', order.id)
             order_data = OrderSerializer.model_validate(order)
             order_data = jsonable_encoder(order_data)
-            send_task(str(order.id), json.dumps(order_data))
+            await send_task(str(order.id), json.dumps(order_data))
 
             return {
                 'success': True,
