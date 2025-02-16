@@ -11,7 +11,7 @@ from order.models import Order, OrderStatus
 from order.order_serializer import OrderSerializer
 from order.requests import CreateOrderRequest, UpdateOrderRequest
 from user.models import User
-from visa_center.models import VisaCenterCredentials
+from visa_center.models import VisaCenterCredentials, CountryEnum
 from core.kafka_producer import send_task
 
 
@@ -44,7 +44,16 @@ class OrderService:
             print('Orderid: ', order.id)
             order_data = OrderSerializer.model_validate(order)
             order_data = jsonable_encoder(order_data)
-            await send_task(str(order.id), json.dumps(order_data))
+
+            match visa_credentials.country:
+                case CountryEnum.ES:
+                    topic = 'visa-es-orders'
+                case CountryEnum.GR:
+                    topic = 'visa-gr-orders'
+
+            print('topic', topic)
+
+            await send_task(str(order.id), json.dumps(order_data), topic=topic)
 
             return {
                 'success': True,
