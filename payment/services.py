@@ -62,7 +62,8 @@ class PaymentService:
         except Exception as e:
             raise e
 
-    async def check_binding_existence(self, db: AsyncSession, user: User, binding_id: str):
+    @staticmethod
+    async def check_binding_existence(db: AsyncSession, user: User, binding_id: str):
         async with proceed_request(db) as db:
             result = await db.execute(
                 select(Card)
@@ -129,5 +130,28 @@ class PaymentService:
             raise e
         except Exception as e:
             raise e
+
+    @staticmethod
+    async def remove_payment_method(db: AsyncSession, user: User, card_id: int):
+        async with proceed_request(db) as db:
+            result = await db.execute(
+                select(Card)
+                .where(Card.id == card_id)
+            )
+
+            card = result.scalar_one_or_none()
+            if card is None:
+                raise HTTPException(status_code=404, detail="Card not found")
+
+            if card.user_id != user.id:
+                raise HTTPException(status_code=403, detail='Your are not the owner of this card')
+
+            await db.delete(card)
+            await db.commit()
+
+            return {
+                'success': True,
+                'message': 'Your card was successfully deleted.'
+            }
 
 

@@ -20,3 +20,9 @@ async def create_payment_method(data: AttachCardRequest,
                                 db: AsyncSession = Depends(get_db)):
     return await PaymentService().attach_card(db, user, data)
 
+
+@router.delete('/payment-method/{card_id}')
+async def delete_payment_method(card_id: int,
+                                user: User = Depends(get_current_user),
+                                db: AsyncSession = Depends(get_db)):
+    return await PaymentService.remove_payment_method(db, user, card_id)
