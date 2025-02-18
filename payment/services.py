@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.proceed_request import proceed_request
 from payment.models import Card
-from payment.requests import GatewayRequest, AttachCardRequest
+from payment.requests import GatewayRequest, AttachCardRequest, CardCreate, CardResponse
 from user.models import User
 from ulid import ULID
 
@@ -95,28 +95,28 @@ class PaymentService:
                         raw_response = await response.text()
                         data = json.loads(raw_response)
 
-                    if data.get('error') or data.get('errorCode', 0) != 0:
-                        raise HTTPException(status_code=500, detail=data.get('errorMessage', ""))
-                    elif data.get('actionCode', 0) != 0:
-                        raise HTTPException(status_code=500, detail=data.get('actionCodeDescription', ""))
-                    elif not data.get('bindingInfo'):
+                    data = CardResponse(**data)
+
+                    print('data', data)
+
+                    if data.error and data.errorCode != 0:
+                        print('Entered error Code', data.errorMessage)
+                        raise HTTPException(status_code=500, detail=data.errorMessage or "")
+                    elif data.actionCode != 0:
+                        print('Entered actionCode', data.actionCodeDescription)
+                        raise HTTPException(status_code=500, detail=data.actionCodeDescription or "")
+                    elif not data.bindingInfo:
+                        print('No binding info')
                         raise HTTPException(status_code=500, detail='Something went wrong, try again later!')
 
 
-                    existing_card = await self.check_binding_existence(db, user, data['bindingInfo']['bindingId'])
+                    existing_card = await self.check_binding_existence(db, user, data.bindingInfo.bindingId)
                     print('existing_card', existing_card)
 
                     if not existing_card:
                         async with proceed_request(db) as db:
-                            expiration = data['cardAuthInfo']['expirationDate']
-                            card = Card(
-                                user_id=user.id,
-                                binding_id=data['bindingInfo']['bindingId'],
-                                card_number=data['cardAuthInfo']['pan'],
-                                card_holder_name=data['cardAuthInfo']['cardholderName'],
-                                expiration_date=f"{expiration[:4]}/{expiration[4:]}",
-                                bank_name=data['bankInfo']['bankName']
-                            )
+                            card_data = CardCreate.from_response(data, user.id)
+                            card = Card(**card_data.model_dump())
 
                             db.add(card)
                             await db.commit()
@@ -125,6 +125,7 @@ class PaymentService:
                                 'success': True,
                                 'message': 'Your card was successfully added'
                             }
+                    raise HTTPException(status_code=400, detail='This card is already in use.')
 
         except aiohttp.ClientError as e:
             raise e
