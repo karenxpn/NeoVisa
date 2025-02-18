@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.types import DateTime
+
 
 from core.database import Base
 
@@ -9,7 +11,7 @@ class PhoneOtp(Base):
     id = Column(Integer, primary_key=True, index=True)
     phone_number = Column(String, index=True, unique=True)
     otp = Column(String, index=True)
-    created_at = Column(DateTime, default=datetime.now(tz=timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc))
 
 
 class Token(Base):

@@ -26,6 +26,12 @@ async_session = async_sessionmaker(
 
 Base = declarative_base()
 
+from auth.models import *
+from user.models import *
+from visa_center.models import *
+from payment.models import *
+from order.models import *
+
 # Dependency for async DB session
 async def get_db():
     async with async_session() as session:
