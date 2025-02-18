@@ -31,7 +31,7 @@ class PaymentService:
             "userName": self.username,
             "password": self.password,
             "orderNumber": order_number,
-            "returnUrl": "https://neovisa.am/",
+            "returnUrl": "https://neovisa.am",
             "amount": amount,
             "clientId": user.id,
             "currency": '051',
