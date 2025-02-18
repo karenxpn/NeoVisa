@@ -23,9 +23,8 @@ class PaymentService:
         print('credentials', self.base_url, self.username, self.password)
 
     async def receive_payment_gateway(self, user: User, model: GatewayRequest = None):
-        url = f"{self.base_url}/register.do"
 
-        amount = model.amount if model is not None else 500
+        amount = model.amount if model is not None else 10
         order_number = str(ULID())
 
         params = {
@@ -35,6 +34,7 @@ class PaymentService:
             "returnUrl": "https://neovisa.am/",
             "amount": amount,
             "clientId": user.id,
+            "currency": '051',
         }
 
         print('order_number', order_number)
@@ -61,18 +61,6 @@ class PaymentService:
             raise e
         except Exception as e:
             raise e
-
-    @staticmethod
-    async def check_binding_existence(db: AsyncSession, user: User, binding_id: str):
-        async with proceed_request(db) as db:
-            result = await db.execute(
-                select(Card)
-                .where(Card.user_id == user.id)
-                .where(Card.binding_id == binding_id)
-            )
-
-            card = result.scalar_one_or_none()
-            return card
 
     async def attach_card(self, db: AsyncSession, user: User, model: AttachCardRequest):
         order_id = model.order_id
@@ -110,22 +98,17 @@ class PaymentService:
                         raise HTTPException(status_code=500, detail='Something went wrong, try again later!')
 
 
-                    existing_card = await self.check_binding_existence(db, user, data.bindingInfo.bindingId)
-                    print('existing_card', existing_card)
+                    async with proceed_request(db) as db:
+                        card_data = await CardCreate.from_response(data, user.id, data.bindingInfo.bindingId, db)
+                        card = Card(**card_data.model_dump())
 
-                    if not existing_card:
-                        async with proceed_request(db) as db:
-                            card_data = CardCreate.from_response(data, user.id)
-                            card = Card(**card_data.model_dump())
+                        db.add(card)
+                        await db.commit()
 
-                            db.add(card)
-                            await db.commit()
-
-                            return {
-                                'success': True,
-                                'message': 'Your card was successfully added'
-                            }
-                    raise HTTPException(status_code=400, detail='This card is already in use.')
+                        return {
+                            'success': True,
+                            'message': 'Your card was successfully added'
+                        }
 
         except aiohttp.ClientError as e:
             raise e
