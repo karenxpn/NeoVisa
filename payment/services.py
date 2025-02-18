@@ -85,16 +85,11 @@ class PaymentService:
 
                     data = CardResponse(**data)
 
-                    print('data', data)
-
                     if data.error and data.errorCode != 0:
-                        print('Entered error Code', data.errorMessage)
                         raise HTTPException(status_code=500, detail=data.errorMessage or "")
                     elif data.actionCode != 0:
-                        print('Entered actionCode', data.actionCodeDescription)
                         raise HTTPException(status_code=500, detail=data.actionCodeDescription or "")
                     elif not data.bindingInfo:
-                        print('No binding info')
                         raise HTTPException(status_code=500, detail='Something went wrong, try again later!')
 
 
