@@ -4,12 +4,16 @@ from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.database import get_db
 from core.proceed_request import proceed_request
 from order.models import Order, OrderStatus
 from order.order_serializer import OrderSerializer
 from order.requests import CreateOrderRequest, UpdateOrderRequest
+from payment.models import Card
+from payment.requests import GatewayRequest
+from payment.services import PaymentService
 from user.models import User
 from visa_center.models import VisaCenterCredentials, CountryEnum
 from core.kafka_producer import send_task
@@ -22,6 +26,7 @@ class OrderService:
 
             visa_credentials = await db.execute(
                 select(VisaCenterCredentials)
+                .options(selectinload(VisaCenterCredentials.passports))
                 .where(VisaCenterCredentials.id == model.credential_id)
             )
             visa_credentials = visa_credentials.scalar_one_or_none()
@@ -38,7 +43,7 @@ class OrderService:
             )
 
             db.add(order)
-            await db.commit()
+            await db.flush()
 
 
             print('Orderid: ', order.id)
@@ -51,10 +56,38 @@ class OrderService:
                 case CountryEnum.GR:
                     topic = 'visa-gr-orders'
 
-            print('topic', topic)
+
+            gateway_request = GatewayRequest(
+                amount=visa_credentials.passports_count * 3000
+            )
+
+            payment_order = await PaymentService().receive_payment_gateway(user, gateway_request)
+            print(payment_order)
+            print('payment order type', type(payment_order))
+
+            user_default_payment = await db.execute(
+                select(Card)
+                .where(Card.user_id == user.id)
+                .where(Card.default_card == True)
+            )
+
+            user_default_payment = user_default_payment.scalar_one_or_none()
+            if user_default_payment is None:
+                raise HTTPException(status_code=404, detail="User Default Payment not found")
+
+            print('user default payment method', user_default_payment)
+            print('payment order id = ', payment_order['orderId'])
+            print('user binding id = ', user_default_payment.binding_id)
+
+            payment_process = await PaymentService().perform_binding_payment(payment_order['orderId'],
+                                                                             user_default_payment.binding_id)
+            print(payment_process)
+
+            await PaymentService().receive_payment_gateway(user, )
 
             await send_task(str(order.id), json.dumps(order_data), topic=topic)
 
+            await db.commit()
             return {
                 'success': True,
                 'message': 'Order created',

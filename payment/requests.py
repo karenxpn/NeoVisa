@@ -9,7 +9,7 @@ from payment.models import Card
 
 
 class GatewayRequest(BaseModel):
-    pass
+    amount: int = Field(..., gt=0)
 
 class AttachCardRequest(BaseModel):
     order_id: str

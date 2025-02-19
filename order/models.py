@@ -27,7 +27,6 @@ class Order(Base):
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     user = relationship('User', back_populates='orders')
 
-
     created_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc), onupdate=datetime.now(tz=timezone.utc))
 

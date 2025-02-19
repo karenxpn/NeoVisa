@@ -145,16 +145,16 @@ class PaymentService:
 
 
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, ssl=False) as response:
+                async with session.post(url, params=params, ssl=False) as response:
                     try:
                         data = await response.json()
                     except aiohttp.ContentTypeError:
                         raw_response = await response.text()
                         data = json.loads(raw_response)
 
-                    if data['success'] != 0:
+                    if data.get('success', None) is not None and data.get('success', None) != 0:
                         raise HTTPException(status_code=500, detail=data['info'])
-                    if data['errorCode']:
+                    if data.get('errorCode', None):
                         raise HTTPException(status_code=500, detail=data['error'])
 
                     return data

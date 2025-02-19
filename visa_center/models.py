@@ -43,6 +43,12 @@ class VisaCenterCredentials(Base):
     def get_password(self) -> str:
         return cipher.decrypt(self.encrypted_password.encode()).decode()
 
+    @property
+    def passports_count(self):
+        if hasattr(self, 'passports') and self.passports is not None:
+            return len(self.passports)
+        return 0
+
 
 
 class PassportType(Enum):
