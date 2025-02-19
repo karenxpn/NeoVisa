@@ -20,8 +20,8 @@ from core.kafka_producer import send_task
 
 
 class OrderService:
-    @staticmethod
-    async def create_order(db: AsyncSession, user: User, model: CreateOrderRequest):
+
+    async def create_order(self, db: AsyncSession, user: User, model: CreateOrderRequest):
         async with proceed_request(db) as db:
 
             visa_credentials = await db.execute(
@@ -65,16 +65,7 @@ class OrderService:
             print(payment_order)
             print('payment order type', type(payment_order))
 
-            user_default_payment = await db.execute(
-                select(Card)
-                .where(Card.user_id == user.id)
-                .where(Card.default_card == True)
-            )
-
-            user_default_payment = user_default_payment.scalar_one_or_none()
-            if user_default_payment is None:
-                raise HTTPException(status_code=404, detail="User Default Payment not found")
-
+            user_default_payment = await self.get_user_card(db, user, model.card_id)
             print('user default payment method', user_default_payment)
             print('payment order id = ', payment_order['orderId'])
             print('user binding id = ', user_default_payment.binding_id)
@@ -92,6 +83,24 @@ class OrderService:
                 'success': True,
                 'message': 'Order created',
             }
+
+    @staticmethod
+    async def get_user_card(db: AsyncSession, user: User, card_id: int = None):
+        async with proceed_request(db) as db:
+            query = select(Card).where(Card.user_id == user.id)
+
+            if card_id is not None:
+                query = query.where(Card.id == card_id)
+            else:
+                query = query.where(Card.default_card == True)
+
+            user_card = await db.execute(query)
+            user_card = user_card.scalar_one_or_none()
+
+            if user_card is None:
+                raise HTTPException(status_code=404, detail="User Default Payment not found")
+
+            return user_card
 
     @staticmethod
     async def get_order(order_id: int, db: AsyncSession, user: User):
