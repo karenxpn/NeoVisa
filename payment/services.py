@@ -133,4 +133,35 @@ class PaymentService:
                 'message': 'Your card was successfully deleted.'
             }
 
+    async def perform_binding_payment(self, md_order: str, binding_id: str):
+        try:
+            url = f'{self.base_url}/paymentOrderBinding.do'
+            params = {
+                'userName': self.username,
+                'password': self.password,
+                'mdOrder': md_order,
+                'bindingId': binding_id,
+            }
+
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params, ssl=False) as response:
+                    try:
+                        data = await response.json()
+                    except aiohttp.ContentTypeError:
+                        raw_response = await response.text()
+                        data = json.loads(raw_response)
+
+                    if data['success'] != 0:
+                        raise HTTPException(status_code=500, detail=data['info'])
+                    if data['errorCode']:
+                        raise HTTPException(status_code=500, detail=data['error'])
+
+                    return data
+
+        except aiohttp.ClientError as e:
+            raise e
+        except Exception as e:
+            raise e
+
 
