@@ -20,8 +20,6 @@ class PaymentService:
         self.username = os.environ.get("PAYMENT_USERNAME")
         self.password = os.environ.get("PAYMENT_PASSWORD")
 
-        print('credentials', self.base_url, self.username, self.password)
-
     async def receive_payment_gateway(self, user: User, model: GatewayRequest = None):
 
         amount = model.amount if model is not None else 10
@@ -36,8 +34,6 @@ class PaymentService:
             "clientId": user.id,
             "currency": '051',
         }
-
-        print('order_number', order_number)
 
         try:
             url = f"{self.base_url}/register.do"
@@ -131,7 +127,6 @@ class PaymentService:
 
     async def perform_binding_payment(self, md_order: str, binding_id: str):
         try:
-            print('entered payment')
             url = f'{self.base_url}/paymentOrderBinding.do'
             params = {
                 'userName': self.username,
@@ -144,14 +139,11 @@ class PaymentService:
 
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, params=params, ssl=False) as response:
-                    print('response', response)
                     try:
                         data = await response.json()
                     except aiohttp.ContentTypeError:
                         raw_response = await response.text()
                         data = json.loads(raw_response)
-
-                    print('data of the response', data)
 
                     if data.get('success', None) is not None and data.get('success', None) != 0:
                         raise HTTPException(status_code=500, detail=data['info'])

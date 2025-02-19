@@ -24,7 +24,6 @@ class OrderService:
     async def create_order(self, db: AsyncSession, user: User, model: CreateOrderRequest):
         async with proceed_request(db) as db:
             visa_credentials = await self.get_visa_credentials(db, model.credential_id, user, True)
-            print('visa_credentials', visa_credentials)
 
             order = Order(
                 credential_id=model.credential_id,
@@ -51,19 +50,14 @@ class OrderService:
 
             payment_order = await PaymentService().receive_payment_gateway(user, gateway_request)
 
-            user_default_payment = await self.get_user_card(db, user, model.card_id)
-            print('user default payment method', user_default_payment)
-            print('payment order id = ', payment_order['orderId'])
-            print('user binding id = ', user_default_payment.binding_id)
+            payment_card = await self.get_user_card(db, user, model.card_id)
 
             payment_process = await PaymentService().perform_binding_payment(payment_order['orderId'],
-                                                                             user_default_payment.binding_id)
-            print(payment_process)
+                                                                             payment_card.binding_id)
 
             payment_status = await PaymentService().check_order_status(payment_order['orderNumber'],
                                                                        payment_order['orderId'])
 
-            print(payment_status)
             if payment_status.orderStatus != 2:
                 raise HTTPException(status_code=500, detail='Payment failed')
 
@@ -129,8 +123,6 @@ class OrderService:
             )
             order = result.scalar_one_or_none()
 
-            print('order now', )
-
             if not result:
                 raise Exception('Order not found')
 
@@ -147,7 +139,6 @@ class OrderService:
         result = await db.execute(query)
         visa_credentials = result.scalar_one_or_none()
 
-        print('visa_credentials inside', visa_credentials)
 
         if visa_credentials is None:
             raise HTTPException(status_code=404, detail="Visa Center Credentials not found")
