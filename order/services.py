@@ -23,19 +23,7 @@ class OrderService:
 
     async def create_order(self, db: AsyncSession, user: User, model: CreateOrderRequest):
         async with proceed_request(db) as db:
-
-            visa_credentials = await db.execute(
-                select(VisaCenterCredentials)
-                .options(selectinload(VisaCenterCredentials.passports))
-                .where(VisaCenterCredentials.id == model.credential_id)
-            )
-            visa_credentials = visa_credentials.scalar_one_or_none()
-
-            if visa_credentials is None:
-                raise HTTPException(status_code=404, detail="Visa Center Credentials not found")
-
-            if visa_credentials.user_id != user.id:
-                raise HTTPException(status_code=403, detail="User ID mismatch")
+            visa_credentials = await self.get_visa_credentials(model.credential_id, user, True)
 
             order = Order(
                 credential_id=model.credential_id,
@@ -144,13 +132,23 @@ class OrderService:
             await db.commit()
 
     @staticmethod
-    async def get_visa_credentials(credentials_id: int):
+    async def get_visa_credentials(credentials_id: int, user: User, load_passports: bool = False):
         async for db in get_db():
-            result = await db.execute(
-                select(VisaCenterCredentials)
-                .where(VisaCenterCredentials.id == credentials_id)
-            )
-            return result.scalar_one_or_none()
+            query = select(VisaCenterCredentials).where(VisaCenterCredentials.id == credentials_id)
+
+            if load_passports:
+                query = query.options(selectinload(VisaCenterCredentials.passports))
+
+            result = await db.execute(query)
+            visa_credentials = result.scalar_one_or_none()
+
+            if visa_credentials is None:
+                raise HTTPException(status_code=404, detail="Visa Center Credentials not found")
+
+            if user and visa_credentials.user_id != user.id:
+                raise HTTPException(status_code=403, detail="User ID mismatch")
+
+            return visa_credentials
 
     @staticmethod
     async def update_order(order_id: int, db: AsyncSession, user: User, model: UpdateOrderRequest):

@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload, aliased
 
 from core.proceed_request import proceed_request
 from order.models import Order, OrderStatus
+from order.services import OrderService
 from user.models import User
 from visa_center.models import VisaCenterCredentials, Passport
 from visa_center.requests import AddVisaAccountRequest, VisaAccountCredentialsResponse, UpdateVisaAccountRequest, \
@@ -45,26 +46,9 @@ class VisaCenterService:
             }
 
     @staticmethod
-    async def get_visa_center_credentials_with_id(db: AsyncSession, user: User, cred_id: int):
-        result = await db.execute(
-            select(VisaCenterCredentials)
-            .where(VisaCenterCredentials.id == cred_id)
-        )
-
-        visa_account = result.scalar_one_or_none()
-
-        if not visa_account:
-            raise HTTPException(status_code=404, detail="Visa account not found")
-
-        if visa_account.user_id != user.id:
-            raise HTTPException(status_code=403, detail="You are not authorized to perform this action")
-
-        return visa_account
-
-
-    async def delete_visa_center_credentials(self, db: AsyncSession, user: User, cred_id: int):
+    async def delete_visa_center_credentials(db: AsyncSession, user: User, cred_id: int):
         async with proceed_request(db) as db:
-            visa_account = await self.get_visa_center_credentials_with_id(db, user, cred_id)
+            visa_account = await OrderService.get_visa_credentials(cred_id, user, False)
 
             await db.delete(visa_account)
             await db.commit()
@@ -74,19 +58,7 @@ class VisaCenterService:
     @staticmethod
     async def get_visa_center_credentials(db: AsyncSession, user: User, cred_id: int):
         async with proceed_request(db) as db:
-            result = await db.execute(
-                select(VisaCenterCredentials)
-                .options(selectinload(VisaCenterCredentials.passports))
-                .where(VisaCenterCredentials.id == cred_id)
-            )
-
-            visa_account = result.scalar_one_or_none()
-
-            if not visa_account:
-                raise HTTPException(status_code=404, detail="Visa account not found")
-
-            if visa_account.user_id != user.id:
-                raise HTTPException(status_code=403, detail="You are not authorized to perform this action")
+            visa_account = await OrderService.get_visa_credentials(cred_id, user, True)
 
             visa_account_passports = [
                 VisaAccountPassport(**passport.__dict__) for passport in visa_account.passports
@@ -103,7 +75,7 @@ class VisaCenterService:
 
     async def update_visa_center_credentials(self, db: AsyncSession, user: User, id: int, credentials: UpdateVisaAccountRequest):
         async with proceed_request(db) as db:
-            visa_account = await self.get_visa_center_credentials_with_id(db, user, id)
+            visa_account = await OrderService.get_visa_credentials(id, user, False)
 
             update_dict = credentials.model_dump(exclude_unset=True, exclude={'password', 'passports'})
             for key, value in update_dict.items():
@@ -143,7 +115,7 @@ class VisaCenterService:
                 .where(Order.status == OrderStatus.PROCESSING)
             )
 
-            order = order.scalar_one_or_none()
+            order = order.scalars().first()
 
             if order:
                 raise HTTPException(403, 'Order is being processed with this passport, you are not authorized to perform this action')
