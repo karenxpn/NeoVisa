@@ -66,49 +66,19 @@ class PaymentService:
         order_id = model.order_id
         order_number = model.order_number
 
-        try:
-            url = f"{self.base_url}/getOrderStatusExtended.do"
-            params = {
-                'userName': self.username,
-                'password': self.password,
-                'orderNumber': order_number,
-                'orderId': order_id,
+        data = await self.check_order_status(order_id, order_number)
+
+        async with proceed_request(db) as db:
+            card_data = await CardCreate.from_response(data, user.id, data.bindingInfo.bindingId, db)
+            card = Card(**card_data.model_dump())
+
+            db.add(card)
+            await db.commit()
+
+            return {
+                'success': True,
+                'message': 'Your card was successfully added'
             }
-
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, ssl=False) as response:
-                    try:
-                        data = await response.json()
-                    except aiohttp.ContentTypeError:
-                        raw_response = await response.text()
-                        data = json.loads(raw_response)
-
-                    data = CardResponse(**data)
-
-                    if data.error and data.errorCode != 0:
-                        raise HTTPException(status_code=500, detail=data.errorMessage or "")
-                    elif data.actionCode != 0:
-                        raise HTTPException(status_code=500, detail=data.actionCodeDescription or "")
-                    elif not data.bindingInfo:
-                        raise HTTPException(status_code=500, detail='Something went wrong, try again later!')
-
-
-                    async with proceed_request(db) as db:
-                        card_data = await CardCreate.from_response(data, user.id, data.bindingInfo.bindingId, db)
-                        card = Card(**card_data.model_dump())
-
-                        db.add(card)
-                        await db.commit()
-
-                        return {
-                            'success': True,
-                            'message': 'Your card was successfully added'
-                        }
-
-        except aiohttp.ClientError as e:
-            raise e
-        except Exception as e:
-            raise e
 
     @staticmethod
     async def remove_payment_method(db: AsyncSession, user: User, card_id: int):
@@ -132,6 +102,32 @@ class PaymentService:
                 'success': True,
                 'message': 'Your card was successfully deleted.'
             }
+
+    async def check_order_status(self, order_number, order_id):
+        try:
+            url = f"{self.base_url}/getOrderStatusExtended.do"
+            params = {
+                'userName': self.username,
+                'password': self.password,
+                'orderNumber': order_number,
+                'orderId': order_id,
+            }
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params, ssl=False) as response:
+                    try:
+                        data = await response.json()
+                    except aiohttp.ContentTypeError:
+                        raw_response = await response.text()
+                        data = json.loads(raw_response)
+
+                    data = CardResponse(**data)
+                    return data
+
+        except aiohttp.ClientError as e:
+            raise e
+        except Exception as e:
+            raise e
 
     async def perform_binding_payment(self, md_order: str, binding_id: str):
         try:

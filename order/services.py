@@ -46,7 +46,7 @@ class OrderService:
 
 
             gateway_request = GatewayRequest(
-                amount=visa_credentials.passports_count * 3000
+                amount=visa_credentials.passports_count * 3000000
             )
 
             payment_order = await PaymentService().receive_payment_gateway(user, gateway_request)
@@ -59,6 +59,13 @@ class OrderService:
             payment_process = await PaymentService().perform_binding_payment(payment_order['orderId'],
                                                                              user_default_payment.binding_id)
             print(payment_process)
+
+            payment_status = await PaymentService().check_order_status(payment_order['orderNumber'],
+                                                                       payment_order['orderId'])
+
+            print(payment_status)
+            if payment_status.orderStatus != 2:
+                raise HTTPException(status_code=500, detail='Payment failed')
 
             await db.commit()
 

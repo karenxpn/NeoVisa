@@ -41,6 +41,7 @@ class CardResponse(BaseModel):
     errorCode: Optional[int] = 0
     actionCode: Optional[int] = 0
     actionCodeDescription: Optional[str] = None
+    orderStatus: Optional[int] = -1
 
     def is_error(self) -> bool:
         return bool(self.error) or self.errorCode != 0 or self.actionCode != 0
