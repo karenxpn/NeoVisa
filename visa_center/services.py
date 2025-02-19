@@ -48,7 +48,7 @@ class VisaCenterService:
     @staticmethod
     async def delete_visa_center_credentials(db: AsyncSession, user: User, cred_id: int):
         async with proceed_request(db) as db:
-            visa_account = await OrderService.get_visa_credentials(cred_id, user, False)
+            visa_account = await OrderService.get_visa_credentials(db, cred_id, user, False)
 
             await db.delete(visa_account)
             await db.commit()
@@ -58,7 +58,7 @@ class VisaCenterService:
     @staticmethod
     async def get_visa_center_credentials(db: AsyncSession, user: User, cred_id: int):
         async with proceed_request(db) as db:
-            visa_account = await OrderService.get_visa_credentials(cred_id, user, True)
+            visa_account = await OrderService.get_visa_credentials(db, cred_id, user, True)
 
             visa_account_passports = [
                 VisaAccountPassport(**passport.__dict__) for passport in visa_account.passports
@@ -75,7 +75,7 @@ class VisaCenterService:
 
     async def update_visa_center_credentials(self, db: AsyncSession, user: User, id: int, credentials: UpdateVisaAccountRequest):
         async with proceed_request(db) as db:
-            visa_account = await OrderService.get_visa_credentials(id, user, False)
+            visa_account = await OrderService.get_visa_credentials(db, id, user, False)
 
             update_dict = credentials.model_dump(exclude_unset=True, exclude={'password', 'passports'})
             for key, value in update_dict.items():

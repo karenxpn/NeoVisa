@@ -2,6 +2,8 @@ import asyncio
 import json
 
 from confluent_kafka import Consumer, KafkaException
+
+from core.database import get_db
 from core.kafka_producer import retry_task
 from order.models import OrderStatus
 from order.order_serializer import OrderSerializer
@@ -22,17 +24,18 @@ consumer.subscribe(['visa-es-orders'])
 async def process_task(order):
     print('Processing order: {}'.format(order))
 
-    visa_center = await OrderService.get_visa_credentials(order.visa_credentials.id)
+    async for db in get_db():
+        visa_center = await OrderService.get_visa_credentials(order.visa_credentials.id)
 
-    if visa_center.country == CountryEnum.ES:
-        try:
-            await VisaCenterService().run_visa_authentication(visa_center)
-        except KafkaException as e:
-            print(e)
-        except Exception as e:
-            print(e)
-    else:
-        print('Invalid Visa Center')
+        if visa_center.country == CountryEnum.ES:
+            try:
+                await VisaCenterService().run_visa_authentication(visa_center)
+            except KafkaException as e:
+                print(e)
+            except Exception as e:
+                print(e)
+        else:
+            print('Invalid Visa Center')
 
     return True
 
