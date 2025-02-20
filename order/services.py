@@ -4,33 +4,26 @@ from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.database import get_db
 from core.proceed_request import proceed_request
 from order.models import Order, OrderStatus
 from order.order_serializer import OrderSerializer
 from order.requests import CreateOrderRequest, UpdateOrderRequest
+from payment.models import Card
+from payment.requests import GatewayRequest
+from payment.services import PaymentService
 from user.models import User
 from visa_center.models import VisaCenterCredentials, CountryEnum
 from core.kafka_producer import send_task
 
 
 class OrderService:
-    @staticmethod
-    async def create_order(db: AsyncSession, user: User, model: CreateOrderRequest):
+
+    async def create_order(self, db: AsyncSession, user: User, model: CreateOrderRequest):
         async with proceed_request(db) as db:
-
-            visa_credentials = await db.execute(
-                select(VisaCenterCredentials)
-                .where(VisaCenterCredentials.id == model.credential_id)
-            )
-            visa_credentials = visa_credentials.scalar_one_or_none()
-
-            if visa_credentials is None:
-                raise HTTPException(status_code=404, detail="Visa Center Credentials not found")
-
-            if visa_credentials.user_id != user.id:
-                raise HTTPException(status_code=403, detail="User ID mismatch")
+            visa_credentials = await self.get_visa_credentials(db, model.credential_id, user, True)
 
             order = Order(
                 credential_id=model.credential_id,
@@ -38,8 +31,7 @@ class OrderService:
             )
 
             db.add(order)
-            await db.commit()
-
+            await db.flush()
 
             print('Orderid: ', order.id)
             order_data = OrderSerializer.model_validate(order)
@@ -51,7 +43,25 @@ class OrderService:
                 case CountryEnum.GR:
                     topic = 'visa-gr-orders'
 
-            print('topic', topic)
+
+            gateway_request = GatewayRequest(
+                amount=visa_credentials.passports_count * 3000000
+            )
+
+            payment_order = await PaymentService().receive_payment_gateway(user, gateway_request)
+
+            payment_card = await self.get_user_card(db, user, model.card_id)
+
+            payment_process = await PaymentService().perform_binding_payment(payment_order['orderId'],
+                                                                             payment_card.binding_id)
+
+            payment_status = await PaymentService().check_order_status(payment_order['orderNumber'],
+                                                                       payment_order['orderId'])
+
+            if payment_status.orderStatus != 2:
+                raise HTTPException(status_code=500, detail='Payment failed')
+
+            await db.commit()
 
             await send_task(str(order.id), json.dumps(order_data), topic=topic)
 
@@ -59,6 +69,24 @@ class OrderService:
                 'success': True,
                 'message': 'Order created',
             }
+
+    @staticmethod
+    async def get_user_card(db: AsyncSession, user: User, card_id: int = None):
+        async with proceed_request(db) as db:
+            query = select(Card).where(Card.user_id == user.id)
+
+            if card_id is not None:
+                query = query.where(Card.id == card_id)
+            else:
+                query = query.where(Card.default_card == True)
+
+            user_card = await db.execute(query)
+            user_card = user_card.scalar_one_or_none()
+
+            if user_card is None:
+                raise HTTPException(status_code=404, detail="User Default Payment not found")
+
+            return user_card
 
     @staticmethod
     async def get_order(order_id: int, db: AsyncSession, user: User):
@@ -102,13 +130,23 @@ class OrderService:
             await db.commit()
 
     @staticmethod
-    async def get_visa_credentials(credentials_id: int):
-        async for db in get_db():
-            result = await db.execute(
-                select(VisaCenterCredentials)
-                .where(VisaCenterCredentials.id == credentials_id)
-            )
-            return result.scalar_one_or_none()
+    async def get_visa_credentials(db: AsyncSession, credentials_id: int, user: User, load_passports: bool = False):
+        query = select(VisaCenterCredentials).where(VisaCenterCredentials.id == credentials_id)
+
+        if load_passports:
+            query = query.options(selectinload(VisaCenterCredentials.passports))
+
+        result = await db.execute(query)
+        visa_credentials = result.scalar_one_or_none()
+
+
+        if visa_credentials is None:
+            raise HTTPException(status_code=404, detail="Visa Center Credentials not found")
+
+        if user and visa_credentials.user_id != user.id:
+            raise HTTPException(status_code=403, detail="User ID mismatch")
+
+        return visa_credentials
 
     @staticmethod
     async def update_order(order_id: int, db: AsyncSession, user: User, model: UpdateOrderRequest):

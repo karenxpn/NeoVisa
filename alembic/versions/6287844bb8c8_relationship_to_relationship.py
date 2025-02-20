@@ -1,8 +1,8 @@
-"""visa_credentials issue fixed in order model
+"""Relationship to relationship
 
-Revision ID: e88fd8c064a1
-Revises: a39d2f4cabf7
-Create Date: 2025-02-04 21:32:19.450261
+Revision ID: 6287844bb8c8
+Revises: 03b5f1ac990a
+Create Date: 2025-02-18 12:55:15.827019
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'e88fd8c064a1'
-down_revision: Union[str, None] = 'a39d2f4cabf7'
+revision: str = '6287844bb8c8'
+down_revision: Union[str, None] = '03b5f1ac990a'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

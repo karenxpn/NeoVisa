@@ -13,7 +13,7 @@ router = APIRouter()
 async def create_order(data: CreateOrderRequest,
                        user: User = Depends(get_current_user),
                        db: AsyncSession = Depends(get_db)):
-    return await OrderService.create_order(db, user, data)
+    return await OrderService().create_order(db, user, data)
 
 
 @router.get("/orders/{order_id}")

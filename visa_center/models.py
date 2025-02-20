@@ -1,11 +1,13 @@
 import os
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
-from sqlalchemy import Column, String, Integer, ForeignKey, DateTime
+from sqlalchemy import Column, String, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from core.database import Base
 from sqlalchemy import Enum as SQLEnum
 from enum import Enum
+from datetime import datetime, timezone
+from sqlalchemy.types import DateTime
 
 
 load_dotenv()
@@ -32,11 +34,20 @@ class VisaCenterCredentials(Base):
     orders = relationship("Order", back_populates="visa_credentials")
     passports = relationship("Passport", back_populates="credentials", cascade='all, delete-orphan')
 
+    created_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc), onupdate=datetime.now(tz=timezone.utc))
+
     def set_password(self, password: str):
         self.encrypted_password = cipher.encrypt(password.encode()).decode()
 
     def get_password(self) -> str:
         return cipher.decrypt(self.encrypted_password.encode()).decode()
+
+    @property
+    def passports_count(self):
+        if hasattr(self, 'passports') and self.passports is not None:
+            return len(self.passports)
+        return 0
 
 
 
@@ -72,4 +83,8 @@ class Passport(Base):
 
     credentials_id = Column(Integer, ForeignKey('visa_center_credentials.id', ondelete='CASCADE'), nullable=False, index=True)
     credentials = relationship('VisaCenterCredentials', back_populates='passports')
+
+    created_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc), onupdate=datetime.now(tz=timezone.utc))
+
 

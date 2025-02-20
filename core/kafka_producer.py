@@ -17,7 +17,7 @@ async def send_task(key, value, topic = 'visa-es-orders'):
     from order.models import OrderStatus
     from order.services import OrderService
 
-    await OrderService.update_order_status(key, OrderStatus.PROCESSING)
+    await OrderService.update_order_status(int(key), OrderStatus.PROCESSING)
 
     producer.produce(topic, key=key, value=value.encode('utf-8'))
     producer.flush()
