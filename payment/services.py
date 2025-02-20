@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.proceed_request import proceed_request
+from core.proceed_request import proceed_request, network_request
 from payment.models import Card
 from payment.requests import GatewayRequest, AttachCardRequest, CardCreate, CardResponse
 from user.models import User
@@ -25,6 +25,8 @@ class PaymentService:
         amount = model.amount if model is not None else 10
         order_number = str(ULID())
 
+        url = f"{self.base_url}/register.do"
+
         params = {
             "userName": self.username,
             "password": self.password,
@@ -35,28 +37,21 @@ class PaymentService:
             "currency": '051',
         }
 
-        try:
-            url = f"{self.base_url}/register.do"
+        async with network_request() as session:
+            async with session.get(url, params=params, ssl=False) as response:
+                try:
+                    data = await response.json()
+                except aiohttp.ContentTypeError:
+                    raw_response = await response.text()
+                    data = json.loads(raw_response)
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, ssl=False) as response:
-                    try:
-                        data = await response.json()
-                    except aiohttp.ContentTypeError:
-                        raw_response = await response.text()
-                        data = json.loads(raw_response)
+                data['orderNumber'] = order_number
 
-                    data['orderNumber'] = order_number
+                if data.get('error'):
+                    raise HTTPException(status_code=500, detail=data.get('errorMessage', ""))
 
-                    if data.get('error'):
-                        raise HTTPException(status_code=500, detail=data.get('errorMessage', ""))
+                return data
 
-                    return data
-
-        except aiohttp.ClientError as e:
-            raise e
-        except Exception as e:
-            raise e
 
     async def attach_card(self, db: AsyncSession, user: User, model: AttachCardRequest):
         order_id = model.order_id
@@ -100,61 +95,48 @@ class PaymentService:
             }
 
     async def check_order_status(self, order_number, order_id):
-        try:
-            url = f"{self.base_url}/getOrderStatusExtended.do"
-            params = {
-                'userName': self.username,
-                'password': self.password,
-                'orderNumber': order_number,
-                'orderId': order_id,
-            }
+        url = f"{self.base_url}/getOrderStatusExtended.do"
+        params = {
+            'userName': self.username,
+            'password': self.password,
+            'orderNumber': order_number,
+            'orderId': order_id,
+        }
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, ssl=False) as response:
-                    try:
-                        data = await response.json()
-                    except aiohttp.ContentTypeError:
-                        raw_response = await response.text()
-                        data = json.loads(raw_response)
+        async with network_request() as session:
+            async with session.get(url, params=params, ssl=False) as response:
+                try:
+                    data = await response.json()
+                except aiohttp.ContentTypeError:
+                    raw_response = await response.text()
+                    data = json.loads(raw_response)
 
-                    data = CardResponse(**data)
-                    return data
+                data = CardResponse(**data)
+                return data
 
-        except aiohttp.ClientError as e:
-            raise e
-        except Exception as e:
-            raise e
 
     async def perform_binding_payment(self, md_order: str, binding_id: str):
-        try:
-            url = f'{self.base_url}/paymentOrderBinding.do'
-            params = {
-                'userName': self.username,
-                'password': self.password,
-                'mdOrder': md_order,
-                'bindingId': binding_id,
-                'cvc': '000'
-            }
+        url = f'{self.base_url}/paymentOrderBinding.do'
+        params = {
+            'userName': self.username,
+            'password': self.password,
+            'mdOrder': md_order,
+            'bindingId': binding_id,
+            'cvc': '000'
+        }
 
+        async with network_request() as session:
+            async with session.post(url, params=params, ssl=False) as response:
+                try:
+                    data = await response.json()
+                except aiohttp.ContentTypeError:
+                    raw_response = await response.text()
+                    data = json.loads(raw_response)
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, params=params, ssl=False) as response:
-                    try:
-                        data = await response.json()
-                    except aiohttp.ContentTypeError:
-                        raw_response = await response.text()
-                        data = json.loads(raw_response)
+                if data.get('success', None) is not None and data.get('success', None) != 0:
+                    raise HTTPException(status_code=500, detail=data['info'])
+                if data.get('errorCode', None):
+                    raise HTTPException(status_code=500, detail=data['error'])
 
-                    if data.get('success', None) is not None and data.get('success', None) != 0:
-                        raise HTTPException(status_code=500, detail=data['info'])
-                    if data.get('errorCode', None):
-                        raise HTTPException(status_code=500, detail=data['error'])
-
-                    return data
-
-        except aiohttp.ClientError as e:
-            raise e
-        except Exception as e:
-            raise e
-
+                return data
 
