@@ -12,9 +12,7 @@ router = APIRouter()
 
 @router.post('', dependencies=[Depends(get_admin_user)])
 async def add_visa_center(data: AddVisaCenterRequest, db: AsyncSession = Depends(get_db)):
-    return {
-        'message': 'Welcome admin user',
-    }
+    return await VisaCenterService.create_visa_center(db, data)
 
 @router.get('')
 async def get_visa_centers_list(db: AsyncSession = Depends(get_db)):

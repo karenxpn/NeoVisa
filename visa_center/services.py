@@ -8,8 +8,9 @@ from order.models import Order, OrderStatus
 from order.services import OrderService
 from user.models import User
 from visa_center.models import VisaCenterCredentials, Passport, VisaCenter
-from visa_center.requests import AddVisaAccountCredentialsRequest, VisaAccountCredentialsResponse, UpdateVisaAccountRequest, \
-    UpdatePassportRequest, VisaAccountPassport
+from visa_center.requests import AddVisaAccountCredentialsRequest, VisaAccountCredentialsResponse, \
+    UpdateVisaAccountRequest, \
+    UpdatePassportRequest, VisaAccountPassport, AddVisaCenterRequest
 from visa_center.spain.automation.authentication import BLSAuthentication
 
 
@@ -147,6 +148,16 @@ class VisaCenterService:
 
             visa_centers = result.scalar_one_or_none()
             return visa_centers
+
+    @staticmethod
+    async def create_visa_center(db: AsyncSession, model: AddVisaCenterRequest):
+        async with proceed_request(db) as db:
+            visa_center = VisaCenter(**model.model_dump(exclude_unset=True))
+            db.add(visa_center)
+            await db.commit()
+
+            return visa_center
+
 
 
     @staticmethod
