@@ -2,12 +2,32 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from core.jwt_token import get_current_user
+from core.jwt_token import get_current_user, get_admin_user
 from user.models import User
 from visa_center.requests import AddVisaAccountRequest, UpdateVisaAccountRequest, UpdatePassportRequest
 from visa_center.services import VisaCenterService
 
 router = APIRouter()
+
+@router.post('', dependencies=[Depends(get_admin_user)])
+async def add_visa_center():
+    return {
+        'message': 'Welcome admin user',
+    }
+
+@router.get('')
+async def get_visa_centers_list(current_user: User = Depends(get_current_user),
+                                db: AsyncSession = Depends(get_db)):
+    return {
+        'message': 'visa centers list',
+    }
+
+@router.patch('/{id}', dependencies=[Depends(get_admin_user)])
+async def update_visa_center(id: int,
+                             db: AsyncSession = Depends(get_db)):
+    return {
+        'message': 'Update visa center',
+    }
 
 @router.post('/credentials')
 async def add_visa_account(data: AddVisaAccountRequest,
