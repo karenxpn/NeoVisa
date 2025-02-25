@@ -17,11 +17,12 @@ async def add_visa_center(data: AddVisaCenterRequest, db: AsyncSession = Depends
     }
 
 @router.get('')
-async def get_visa_centers_list(current_user: User = Depends(get_current_user),
-                                db: AsyncSession = Depends(get_db)):
-    return {
-        'message': 'visa centers list',
-    }
+async def get_visa_centers_list(db: AsyncSession = Depends(get_db)):
+    return await VisaCenterService.get_visa_center_list(db)
+
+@router.get('/{id}')
+async def get_visa_center_by_id(id: int, db: AsyncSession = Depends(get_db)):
+    return await VisaCenterService.get_visa_center_by_id(id, db)
 
 @router.patch('/{id}', dependencies=[Depends(get_admin_user)])
 async def update_visa_center(id: int,

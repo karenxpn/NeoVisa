@@ -7,7 +7,7 @@ from core.proceed_request import proceed_request
 from order.models import Order, OrderStatus
 from order.services import OrderService
 from user.models import User
-from visa_center.models import VisaCenterCredentials, Passport
+from visa_center.models import VisaCenterCredentials, Passport, VisaCenter
 from visa_center.requests import AddVisaAccountCredentialsRequest, VisaAccountCredentialsResponse, UpdateVisaAccountRequest, \
     UpdatePassportRequest, VisaAccountPassport
 from visa_center.spain.automation.authentication import BLSAuthentication
@@ -126,6 +126,27 @@ class VisaCenterService:
 
             await db.commit()
             return passport
+
+    @staticmethod
+    async def get_visa_center_list(db: AsyncSession):
+        async with proceed_request(db) as db:
+            result = await db.execute(
+                select(VisaCenter)
+            )
+            visa_centers = result.scalars().all()
+
+            return visa_centers
+
+    @staticmethod
+    async def get_visa_center_by_id(id: int, db: AsyncSession):
+        async with proceed_request(db) as db:
+            result = await db.execute(
+                select(VisaCenter)
+                .where(VisaCenter.id == id)
+            )
+
+            visa_centers = result.scalar_one_or_none()
+            return visa_centers
 
 
     @staticmethod
