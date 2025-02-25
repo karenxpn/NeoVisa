@@ -10,7 +10,7 @@ from user.models import User
 from visa_center.models import VisaCenterCredentials, Passport, VisaCenter
 from visa_center.requests import AddVisaAccountCredentialsRequest, VisaAccountCredentialsResponse, \
     UpdateVisaAccountRequest, \
-    UpdatePassportRequest, VisaAccountPassport, AddVisaCenterRequest
+    UpdatePassportRequest, VisaAccountPassport, AddVisaCenterRequest, UpdateVisaCenterRequest
 from visa_center.spain.automation.authentication import BLSAuthentication
 
 
@@ -158,6 +158,22 @@ class VisaCenterService:
 
             return visa_center
 
+    @staticmethod
+    async def update_visa_center(id: int, db: AsyncSession, model: UpdateVisaCenterRequest):
+        async with proceed_request(db) as db:
+            result = await db.execute(
+                select(VisaCenter)
+                .where(VisaCenter.id == id)
+            )
+
+            visa_center = result.scalar_one_or_none()
+
+            update_dict = model.model_dump(exclude_unset=True)
+            for key, value in update_dict.items():
+                setattr(visa_center, key, value)
+
+            await db.commit()
+            return visa_center
 
 
     @staticmethod

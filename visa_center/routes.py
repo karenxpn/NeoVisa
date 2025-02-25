@@ -5,7 +5,7 @@ from core.database import get_db
 from core.jwt_token import get_current_user, get_admin_user
 from user.models import User
 from visa_center.requests import AddVisaAccountCredentialsRequest, UpdateVisaAccountRequest, UpdatePassportRequest, \
-    AddVisaCenterRequest
+    AddVisaCenterRequest, UpdateVisaCenterRequest
 from visa_center.services import VisaCenterService
 
 router = APIRouter()
@@ -24,10 +24,9 @@ async def get_visa_center_by_id(id: int, db: AsyncSession = Depends(get_db)):
 
 @router.patch('/{id}', dependencies=[Depends(get_admin_user)])
 async def update_visa_center(id: int,
+                             data: UpdateVisaCenterRequest,
                              db: AsyncSession = Depends(get_db)):
-    return {
-        'message': 'Update visa center',
-    }
+    return await VisaCenterService.update_visa_center(id, db, data)
 
 @router.post('/credentials')
 async def add_visa_account(data: AddVisaAccountCredentialsRequest,
