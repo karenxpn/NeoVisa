@@ -4,13 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
 from core.jwt_token import get_current_user, get_admin_user
 from user.models import User
-from visa_center.requests import AddVisaAccountRequest, UpdateVisaAccountRequest, UpdatePassportRequest
+from visa_center.requests import AddVisaAccountCredentialsRequest, UpdateVisaAccountRequest, UpdatePassportRequest, \
+    AddVisaCenterRequest
 from visa_center.services import VisaCenterService
 
 router = APIRouter()
 
 @router.post('', dependencies=[Depends(get_admin_user)])
-async def add_visa_center():
+async def add_visa_center(data: AddVisaCenterRequest, db: AsyncSession = Depends(get_db)):
     return {
         'message': 'Welcome admin user',
     }
@@ -30,7 +31,7 @@ async def update_visa_center(id: int,
     }
 
 @router.post('/credentials')
-async def add_visa_account(data: AddVisaAccountRequest,
+async def add_visa_account(data: AddVisaAccountCredentialsRequest,
                            current_user: User = Depends(get_current_user),
                            db: AsyncSession = Depends(get_db)):
     return await VisaCenterService.store_visa_center_credentials(db, current_user, data)

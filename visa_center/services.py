@@ -8,14 +8,14 @@ from order.models import Order, OrderStatus
 from order.services import OrderService
 from user.models import User
 from visa_center.models import VisaCenterCredentials, Passport
-from visa_center.requests import AddVisaAccountRequest, VisaAccountCredentialsResponse, UpdateVisaAccountRequest, \
+from visa_center.requests import AddVisaAccountCredentialsRequest, VisaAccountCredentialsResponse, UpdateVisaAccountRequest, \
     UpdatePassportRequest, VisaAccountPassport
 from visa_center.spain.automation.authentication import BLSAuthentication
 
 
 class VisaCenterService:
     @staticmethod
-    async def store_visa_center_credentials(db: AsyncSession, user: User, credentials: AddVisaAccountRequest):
+    async def store_visa_center_credentials(db: AsyncSession, user: User, credentials: AddVisaAccountCredentialsRequest):
         async with proceed_request(db) as db:
             visa_account_data = credentials.model_dump(exclude={'passports', 'password'})
             visa_account_data['user_id'] = user.id
@@ -126,7 +126,6 @@ class VisaCenterService:
 
             await db.commit()
             return passport
-
 
 
     @staticmethod

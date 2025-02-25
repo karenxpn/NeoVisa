@@ -19,7 +19,7 @@ class VisaAccountPassport(BaseModel):
     nationality: str = Field(min_length=1)
 
 
-class AddVisaAccountRequest(BaseModel):
+class AddVisaAccountCredentialsRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=8)
     country: CountryEnum = Field(...)
@@ -46,7 +46,6 @@ class UpdateVisaAccountRequest(BaseModel):
         from_attributes = True
 
 
-
 class UpdatePassportRequest(BaseModel):
     passport_type: Optional[PassportType] = None
     issuer_country: Optional[str] = Field(None, min_length=1)
@@ -57,3 +56,18 @@ class UpdatePassportRequest(BaseModel):
     name: Optional[str] = Field(None, min_length=1)
     surname: Optional[str] = Field(None, min_length=1)
     nationality: Optional[str] = Field(None, min_length=1)
+
+
+class AddVisaCenterRequest(BaseModel):
+    name: str = Field(..., min_length=1)
+    address: Optional[str] = Field(None, min_length=1)
+
+
+class UpdateVisaCenterRequest(BaseModel):
+    name: Optional[str] = Field(None, min_length=1)
+    address: Optional[str] = Field(None, min_length=1)
+
+class VisaCenterResponse(BaseModel):
+    id: int
+    name: str
+    address: Optional[str] = None
