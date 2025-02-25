@@ -14,6 +14,9 @@ class User(Base):
     username = Column(String, index=True)
     phone_number = Column(String, index=True, unique=True)
     is_verified = Column(Boolean, default=False)
+    is_staff = Column(Boolean, default=False)
+    is_superuser = Column(Boolean, default=False)
+
     created_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc), onupdate=datetime.now(tz=timezone.utc))
 
