@@ -34,6 +34,9 @@ class VisaCenterCredentials(Base):
     orders = relationship("Order", back_populates="visa_credentials")
     passports = relationship("Passport", back_populates="credentials", cascade='all, delete-orphan')
 
+    visa_center_id = Column(Integer, ForeignKey('visa_centers.id', ondelete='CASCADE'), nullable=False, index=True)
+    visa_center = relationship('VisaCenter', back_populates='visa_credentials')
+
     created_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc), onupdate=datetime.now(tz=timezone.utc))
 
@@ -95,3 +98,5 @@ class VisaCenter(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, index=True)
     address = Column(String, nullable=True)
+
+    visa_credentials = relationship('VisaCenterCredentials', back_populates='visa_center', passive_deletes=True)
