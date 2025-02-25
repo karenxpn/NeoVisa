@@ -88,3 +88,10 @@ class Passport(Base):
     updated_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc), onupdate=datetime.now(tz=timezone.utc))
 
 
+
+class VisaCenter(Base):
+    __tablename__ = "visa_centers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    address = Column(String, nullable=True)
