@@ -9,20 +9,20 @@ from visa_center.services import VisaCenterService
 
 router = APIRouter()
 
-@router.post('/visa-center')
+@router.post('/credentials')
 async def add_visa_account(data: AddVisaAccountRequest,
                            current_user: User = Depends(get_current_user),
                            db: AsyncSession = Depends(get_db)):
     return await VisaCenterService.store_visa_center_credentials(db, current_user, data)
 
-@router.get('/visa-center/{id}')
+@router.get('/credentials/{id}')
 async def get_visa_center(id: int,
                           current_user: User = Depends(get_current_user),
                           db: AsyncSession = Depends(get_db)):
     return await VisaCenterService.get_visa_center_credentials(db, current_user, id)
 
 
-@router.patch('/visa-center/{id}')
+@router.patch('/credentials/{id}')
 async def update_visa_center(id: int,
                              data: UpdateVisaAccountRequest,
                              current_user: User = Depends(get_current_user),
@@ -30,7 +30,7 @@ async def update_visa_center(id: int,
     return await VisaCenterService().update_visa_center_credentials(db, current_user, id, data)
 
 
-@router.delete('/visa-center/{id}')
+@router.delete('/credentials/{id}')
 async def delete_visa_center_credentials(id: int,
                                      current_user: User = Depends(get_current_user),
                                      db: AsyncSession = Depends(get_db)):
