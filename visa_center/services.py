@@ -7,15 +7,16 @@ from core.proceed_request import proceed_request
 from order.models import Order, OrderStatus
 from order.services import OrderService
 from user.models import User
-from visa_center.models import VisaCenterCredentials, Passport
-from visa_center.requests import AddVisaAccountRequest, VisaAccountCredentialsResponse, UpdateVisaAccountRequest, \
-    UpdatePassportRequest, VisaAccountPassport
+from visa_center.models import VisaCenterCredentials, Passport, VisaCenter
+from visa_center.requests import AddVisaAccountCredentialsRequest, VisaAccountCredentialsResponse, \
+    UpdateVisaAccountRequest, \
+    UpdatePassportRequest, VisaAccountPassport, AddVisaCenterRequest, UpdateVisaCenterRequest
 from visa_center.spain.automation.authentication import BLSAuthentication
 
 
 class VisaCenterService:
     @staticmethod
-    async def store_visa_center_credentials(db: AsyncSession, user: User, credentials: AddVisaAccountRequest):
+    async def store_visa_center_credentials(db: AsyncSession, user: User, credentials: AddVisaAccountCredentialsRequest):
         async with proceed_request(db) as db:
             visa_account_data = credentials.model_dump(exclude={'passports', 'password'})
             visa_account_data['user_id'] = user.id
@@ -127,6 +128,52 @@ class VisaCenterService:
             await db.commit()
             return passport
 
+    @staticmethod
+    async def get_visa_center_list(db: AsyncSession):
+        async with proceed_request(db) as db:
+            result = await db.execute(
+                select(VisaCenter)
+            )
+            visa_centers = result.scalars().all()
+
+            return visa_centers
+
+    @staticmethod
+    async def get_visa_center_by_id(id: int, db: AsyncSession):
+        async with proceed_request(db) as db:
+            result = await db.execute(
+                select(VisaCenter)
+                .where(VisaCenter.id == id)
+            )
+
+            visa_centers = result.scalar_one_or_none()
+            return visa_centers
+
+    @staticmethod
+    async def create_visa_center(db: AsyncSession, model: AddVisaCenterRequest):
+        async with proceed_request(db) as db:
+            visa_center = VisaCenter(**model.model_dump(exclude_unset=True))
+            db.add(visa_center)
+            await db.commit()
+
+            return visa_center
+
+    @staticmethod
+    async def update_visa_center(id: int, db: AsyncSession, model: UpdateVisaCenterRequest):
+        async with proceed_request(db) as db:
+            result = await db.execute(
+                select(VisaCenter)
+                .where(VisaCenter.id == id)
+            )
+
+            visa_center = result.scalar_one_or_none()
+
+            update_dict = model.model_dump(exclude_unset=True)
+            for key, value in update_dict.items():
+                setattr(visa_center, key, value)
+
+            await db.commit()
+            return visa_center
 
 
     @staticmethod

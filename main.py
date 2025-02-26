@@ -10,7 +10,7 @@ app = FastAPI()
 
 app.include_router(auth_router, prefix="/auth")
 app.include_router(user_router)
-app.include_router(vi_center_router)
+app.include_router(vi_center_router, prefix="/visa-centers")
 
 app.include_router(order_router)
 app.include_router(payment_router, prefix="/payment")
