@@ -2,7 +2,7 @@ import json
 import os
 import aiohttp
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.proceed_request import proceed_request, network_request
@@ -72,20 +72,41 @@ class PaymentService:
             }
 
     @staticmethod
-    async def remove_payment_method(db: AsyncSession, user: User, card_id: int):
+    async def get_payment_method(db, user, card_id):
+        result = await db.execute(
+            select(Card)
+            .where(Card.id == card_id)
+        )
+
+        card = result.scalar_one_or_none()
+        if card is None:
+            raise HTTPException(status_code=404, detail="Card not found")
+
+        if card.user_id != user.id:
+            raise HTTPException(status_code=403, detail='Your are not the owner of this card')
+
+        return card
+
+
+    async def get_payment_method_by_id(self, db: AsyncSession, user: User, card_id: int):
+        async with proceed_request(db) as db:
+            card = await self.get_payment_method(db, user, card_id)
+
+            return card
+
+    async def get_payment_methods_list(self, db: AsyncSession, user: User):
         async with proceed_request(db) as db:
             result = await db.execute(
                 select(Card)
-                .where(Card.id == card_id)
+                .where(Card.user_id == user.id)
             )
+            cards = result.scalars().all()
 
-            card = result.scalar_one_or_none()
-            if card is None:
-                raise HTTPException(status_code=404, detail="Card not found")
+            return cards
 
-            if card.user_id != user.id:
-                raise HTTPException(status_code=403, detail='Your are not the owner of this card')
-
+    async def remove_payment_method(self, db: AsyncSession, user: User, card_id: int):
+        async with proceed_request(db) as db:
+            card = await self.get_payment_method(db, user, card_id)
             await db.delete(card)
             await db.commit()
 
@@ -140,3 +161,20 @@ class PaymentService:
 
                 return data
 
+    async def update_default_card(self, db: AsyncSession, user: User, card_id: int):
+        async with proceed_request(db) as db:
+            card = await self.get_payment_method(db, user, card_id)
+            card.default_card = True
+
+            await db.execute(
+                update(Card)
+                .where(Card.user_id == user.id, Card.id != card_id)
+                .values(default_card=False)
+            )
+
+            await db.commit()
+
+            return {
+                'success': True,
+                'message': 'Your default card was successfully updated.'
+            }
