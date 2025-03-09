@@ -1,4 +1,5 @@
 import os
+import time
 
 from pytesseract import pytesseract
 from selenium.webdriver.chrome.service import Service
@@ -44,10 +45,11 @@ class GreeceAuthentication:
 
         username_field.send_keys(self.username)
         password_field.send_keys(self.password)
+        # wait till the captcha is solved
+        time.sleep(5)
 
-        # solve captcha after that click the login button
         login_button.click()
 
 
-# greece = GreeceAuthentication("", "")
-# greece.fill_credentials()
+greece = GreeceAuthentication("", "")
+greece.fill_credentials()
