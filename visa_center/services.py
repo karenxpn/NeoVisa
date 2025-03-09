@@ -7,7 +7,7 @@ from core.proceed_request import proceed_request
 from order.models import Order, OrderStatus
 from order.services import OrderService
 from user.models import User
-from visa_center.models import VisaCenterCredentials, Passport, VisaCenter
+from visa_center.models import VisaCenterCredentials, Passport, VisaCenter, CountryEnum
 from visa_center.requests import AddVisaAccountCredentialsRequest, VisaAccountCredentialsResponse, \
     UpdateVisaAccountRequest, \
     UpdatePassportRequest, VisaAccountPassport, AddVisaCenterRequest, UpdateVisaCenterRequest
@@ -178,5 +178,8 @@ class VisaCenterService:
 
     @staticmethod
     async def run_visa_authentication(credentials: VisaCenterCredentials):
-        service = BLSAuthentication(credentials.username, credentials.get_password())
+        if credentials.country == CountryEnum.ES:
+            service = BLSAuthentication(credentials.username, credentials.get_password())
+        else:
+            service = BLSAuthentication(credentials.username, credentials.get_password())
         await service.login()
