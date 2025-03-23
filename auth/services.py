@@ -30,16 +30,17 @@ async def send_otp(data: PhoneNumberRequest, db: AsyncSession):
 
         gen_otp = str(random.randint(100000, 999999))
 
+        # Delete any existing OTP for this phone number to ensure clean state
         existing_otp = await db.execute(select(PhoneOtp).where(PhoneOtp.phone_number == data.phone_number))
         existing_otp = existing_otp.scalar_one_or_none()
-
         if existing_otp:
-            existing_otp.otp = gen_otp
-        else:
-            otp = PhoneOtp(phone_number=data.phone_number, otp=gen_otp)
-            db.add(otp)
+            await db.delete(existing_otp)
 
-        send_otp_with_twilio(gen_otp, data.phone_number)
+        # Create new OTP record with fresh timestamp
+        otp = PhoneOtp(phone_number=data.phone_number, otp=gen_otp)
+        db.add(otp)
+
+        # send_otp_with_twilio(gen_otp, data.phone_number)
 
         await db.commit()
         return {
@@ -57,7 +58,11 @@ async def verify_otp(data: OTPRequest, db: AsyncSession):
             raise HTTPException(status_code=404, detail="OTP not found")
 
         current_time = datetime.datetime.now(tz=datetime.timezone.utc)
-        expiration_time = otp.created_at.replace(tzinfo=datetime.timezone.utc) + datetime.timedelta(minutes=10)
+        expiration_time = otp.created_at.replace(tzinfo=datetime.timezone.utc) + datetime.timedelta(minutes=1)
+
+        print("current time = ", current_time)
+        print("expiration time = ", expiration_time)
+        print("otp created at", otp.created_at)
 
         if current_time > expiration_time:
             await db.delete(otp)
@@ -91,21 +96,21 @@ async def verify_otp(data: OTPRequest, db: AsyncSession):
 
 
 
-def send_otp_with_twilio(otp, phone_number):
-    account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
-    auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
-
-    try:
-        client = Client(account_sid, auth_token)
-        _ = client.messages.create(
-            messaging_service_sid=os.environ.get('TWILIO_MESSAGING_SERVICE_SID'),
-            to=phone_number,
-            body=f"Your OTP for NeoVies is {otp}!",
-        )
-
-    except TwilioRestException as e:
-        raise HTTPException(status_code=500, detail=f'Failed to send OTP: {str(e)}')
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to send OTP: {str(e)}")
-
-
+# def send_otp_with_twilio(otp, phone_number):
+#     account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+#     auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+#
+#     try:
+#         client = Client(account_sid, auth_token)
+#         _ = client.messages.create(
+#             messaging_service_sid=os.environ.get('TWILIO_MESSAGING_SERVICE_SID'),
+#             to=phone_number,
+#             body=f"Your OTP for NeoVies is {otp}!",
+#         )
+#
+#     except TwilioRestException as e:
+#         raise HTTPException(status_code=500, detail=f'Failed to send OTP: {str(e)}')
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Failed to send OTP: {str(e)}")
+#
+#
