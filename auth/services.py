@@ -35,6 +35,7 @@ async def send_otp(data: PhoneNumberRequest, db: AsyncSession):
         existing_otp = existing_otp.scalar_one_or_none()
         if existing_otp:
             await db.delete(existing_otp)
+            await db.flush()
 
         # Create new OTP record with fresh timestamp
         otp = PhoneOtp(phone_number=data.phone_number, otp=gen_otp)
